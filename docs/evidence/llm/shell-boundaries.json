@@ -1,0 +1,10 @@
+{
+  "startedAt": "2026-09-21T11:10:13.7185743+00:00",
+  "completedAt": "2026-09-21T11:10:19.9296462+00:00",
+  "result": "PASS",
+  "checks": [
+    "PASS 21 LLM shell checks; no processes, credentials, login, or network calls were used.",
+    "PASS 8 actual local/test child environment probes; CODEX_HOME stripped, parent preserved, synthetic values only."
+  ],
+  "modelHttpRequests": 0
+}

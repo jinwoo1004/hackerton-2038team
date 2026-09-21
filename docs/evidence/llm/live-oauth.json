@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-09-21T11:48:25.9980757Z",
+  "result": "PASS",
+  "command": "llm.ps1 -Action Smoke",
+  "runtime": "local",
+  "provider": "codex_oauth",
+  "model": "gpt-6-astra",
+  "authConfigured": true,
+  "exitCode": 0,
+  "timeoutSeconds": 60,
+  "verified": "Minimal structured JSON schema with a single boolean ok=true",
+  "apiKeyRouteRequests": 0,
+  "deployedApiSmoke": "NOT RUN",
+  "credentialsStoredInRepository": false,
+  "workspaceNameVerified": false,
+  "workspaceBenefitVerified": false,
+  "developmentAttempts": [
+    "TIMEOUT",
+    "INVALID_RESPONSE",
+    "INVALID_RESPONSE_metadata_only",
+    "INVALID_RESPONSE",
+    "INVALID_RESPONSE_metadata_only",
+    "PASS"
+  ],
+  "notes": "Only safe metadata retained. No headers, auth-file contents, or raw model response saved. Automatic tests make no real model requests. Live app rule/incident generation and deployed API access are separate checks."
+}

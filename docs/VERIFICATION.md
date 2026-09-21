@@ -1,5 +1,7 @@
 # 독립 최종 검증 — session-monitor
 
+> 이 문서는 AI 연결 분리 전 커밋 `9851a58`의 검증 기록이다. 아래의 API key 실행 안내는 현재 로컬 설정에 적용하지 않는다. 현재 설정은 [AI 연결 사용법](AI-CONNECTION.md), 이번 변경의 결과는 [LLM 검증](LLM-VERIFICATION.md)을 따른다.
+
 검증일: 2026-09-21 KST. 검증자는 제품 구현에 참여하지 않았고 `scripts/verification/`, 이 문서와 `docs/evidence/`만 작성했다. 원본 기준은 `8d4d5ce`, 최종 제품 소스 동결 시각은 18:29:13.892다. 동결 후 독립 재빌드한 Full/Frontend BUILD_ID 시각은 각각 18:31:21, 18:31:39다.
 
 **전체 goal 판정: UNVERIFIED / 미완료.** 실제 OpenAI 호출, 보호된 원본 규격 본문 반영, 기본 포트에서의 깨끗한 기동은 실증하지 못했다. 이를 PASS나 전체 완료로 표현하지 않는다. **실행 가능한 합성 입력·LOCAL 폴백 시연 경로는 Full과 Frontend 단독 모두 PASS**다. Slack은 채널이 없는 조건이므로 외부 발송 대신 실제 미리보기 경로를 검증했다.

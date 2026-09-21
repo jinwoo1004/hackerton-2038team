@@ -51,4 +51,35 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Test processes cannot inherit a user's live provider selection.
+    environment 'APP_RUNTIME', 'test'
+    environment 'LLM_PROVIDER', 'mock'
+}
+
+def privateRuntimeFile = { details ->
+    def name = details.file.name.toLowerCase(Locale.ROOT)
+    name == 'auth.json' || name == 'application-local.yml' || name == 'application-local.yaml' ||
+        (!name.contains('.example.') && ((name.contains('secret') && (name.endsWith('.yml') || name.endsWith('.yaml'))) ||
+            (name.contains('oauth') && name.contains('credential')) || (name.contains('credential') && name.endsWith('.json'))))
+}
+tasks.named('processResources') { exclude privateRuntimeFile }
+// Defense in depth against resources left by an older build before the copy exclusion existed.
+tasks.named('bootJar') { exclude privateRuntimeFile }
+
+tasks.register('llmDiagnose', JavaExec) {
+    group = 'verification'
+    description = 'Validate explicit AI configuration without any model network request.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.xisnd.monitoring.llm.LlmDiagnostic'
+    args 'diagnose'
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
+
+tasks.register('llmSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Explicitly request one minimal structured response from the selected provider.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.xisnd.monitoring.llm.LlmDiagnostic'
+    args 'smoke'
+    jvmArgs '-Dfile.encoding=UTF-8'
 }

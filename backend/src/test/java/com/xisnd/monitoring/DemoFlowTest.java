@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:demo-test;DB_CLOSE_DELAY=-1", "app.llm.openai.api-key="})
+@SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:demo-test;DB_CLOSE_DELAY=-1", "app.llm.runtime=deployed", "app.llm.provider=openai_api", "app.llm.openai.api-key=ignored-test-value"})
 @AutoConfigureMockMvc(print = org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint.NONE)
 @ActiveProfiles({"demo", "test"})
 class DemoFlowTest {
@@ -21,8 +21,11 @@ class DemoFlowTest {
     @Autowired ObjectMapper mapper;
     @Autowired com.xisnd.monitoring.demo.DemoService demo;
     @Autowired com.xisnd.monitoring.telemetry.MetricPointRepository metrics;
+    @Autowired com.xisnd.monitoring.llm.LlmSettings llmSettings;
     @Test
     void seed_trigger_preview_ownership_and_recover_are_consistent() throws Exception {
+        assertThat(llmSettings.runtime()).isEqualTo("test");
+        assertThat(llmSettings.provider()).isEqualTo("mock");
         String token = mapper.readTree(mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
             .content("{\"email\":\"admin@xisnd.com\",\"password\":\"test1234\"}")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("token").asText();
         JsonNode seed = call(post("/api/demo/seed"), token);

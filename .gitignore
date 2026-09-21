@@ -66,3 +66,12 @@ Thumbs.db
 .tools/
 .work/
 
+# OAuth credentials belong in the external project-specific Codex home only.
+auth.json
+*.auth.json
+.codex/
+codex-login.log
+.env.*
+!.env.example
+!**/.env*.example
+

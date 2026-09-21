@@ -1,5 +1,8 @@
 # Runtime 검증 기록
 
+아래 lifecycle 기록은 명시적 AI provider 분리 이전에 실행한 결과다. provider 분리 후 셸 경계 검증은
+`scripts/llm/verification.md`를 참고한다. 새 backend를 사용하는 전체 lifecycle 재검증은 기존 실행 보존 때문에 아직 UNVERIFIED다.
+
 2026-09-21 Windows, PowerShell 7, JDK17, Node24.11.0, Python3.11.9, .NET8.0.425.
 
 | 검사 | 실제 결과 |

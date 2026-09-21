@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-21T11:56:18.6556647Z",
+  "runtime": "local",
+  "provider": "codex_oauth",
+  "model": "gpt-6-astra",
+  "authConfigured": true,
+  "health": "UP",
+  "frontend": "http://localhost:13200/login",
+  "backendPort": 18080,
+  "analysisServicePort": 18000,
+  "seedAnalysisStatus": "COMPLETED",
+  "seedAnalysisScore": 69,
+  "timeoutSeconds": 4,
+  "note": "Reused existing completed demo seed; no new analysis or incident generation triggered by this check."
+}

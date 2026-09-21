@@ -1,0 +1,16 @@
+{
+  "completedAt": "2026-09-21T12:01:21.171547+00:00",
+  "baseline": "9851a58",
+  "counts": {
+    "sourceText": 420,
+    "indexText": 420,
+    "buildFiles": 700,
+    "jarEntries": 218,
+    "runtimeLogs": 8
+  },
+  "credentialPatternMatches": [],
+  "privateCredentialArtifacts": [],
+  "unchangedFeatureGroupChanges": [],
+  "result": "PASS",
+  "limitations": "Pattern scan, not proof against every encoding. Does not open external auth stores. Historical MVP evidence is preserved. Index scan must be rerun after final staging."
+}

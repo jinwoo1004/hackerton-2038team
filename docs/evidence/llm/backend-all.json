@@ -1,0 +1,82 @@
+{
+  "startedAt": "2026-09-21T11:45:02.3624998+00:00",
+  "completedAt": "2026-09-21T11:45:42.7650065+00:00",
+  "result": "PASS",
+  "command": "gradlew.bat --no-daemon --offline --console=plain clean test bootJar",
+  "runtime": "test",
+  "provider": "mock",
+  "modelHttpRequests": 0,
+  "jarSha256": "FC8542203100599A22A51CC9B1295F3475FFC4E51BA06DDF3E3D3B9BFDE7B137",
+  "suites": [
+    {
+      "name": "com.xisnd.monitoring.AgentTelemetryAlertTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.AnalysisFlowTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.AuthAndProjectFlowTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.DashboardAndAccountTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.DemoFlowTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.EnumColumnMigrationTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmProviderBoundaryTest",
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmSseCompletionTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmTransportTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.OpenAiContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}

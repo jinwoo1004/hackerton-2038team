@@ -1,5 +1,9 @@
 # Copy to application-local.yml (gitignored) for direct Gradle development.
+# Actual local settings are excluded from build resources and deployment JARs.
+# Load explicitly: SPRING_CONFIG_ADDITIONAL_LOCATION=file:./src/main/resources/application-local.yml
 # demo.ps1 uses application-demo.yml and supplies its own isolated data paths.
+server:
+  address: 127.0.0.1
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/local;DB_CLOSE_ON_EXIT=FALSE}
@@ -13,7 +17,6 @@ spring:
 app:
   jwt:
     secret: ${APP_JWT_SECRET}
-  llm:
-    openai:
-      api-key: ${OPENAI_API_KEY:}
-      model: ${OPENAI_MODEL:gpt-4.1-mini}
+# AI configuration is exclusively uppercase process environment, not Spring aliases:
+# APP_RUNTIME=local, LLM_PROVIDER=codex_oauth, CODEX_MODEL=<explicit-model>,
+# CODEX_AUTH_FILE=<absolute-project-auth-path-outside-repository-and-default-codex-home>.

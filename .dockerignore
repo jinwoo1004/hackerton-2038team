@@ -1,0 +1,22 @@
+# Defense in depth for any future deployment build context.
+# The application currently deploys as a Spring Boot JAR, not a Codex proxy.
+.git
+.codex
+**/.codex
+**/auth.json
+**/*.auth.json
+**/.env
+**/.env.*
+!**/.env.example
+.demo
+.work
+.tools
+**/node_modules
+**/.next*
+**/.venv
+**/.gradle
+**/data
+**/storage
+**/*.log
+**/application-local.yml
+**/application-secrets.yml

@@ -1,3 +1,4 @@
+#requires -Version 7.4
 [CmdletBinding()]
 param(
     [ValidateSet('Start','Prepare','Stop','Reset','Status')][string]$Action = 'Start',
@@ -9,7 +10,10 @@ param(
     [switch]$SkipAgent
 )
 . (Join-Path $PSScriptRoot 'scripts/runtime/common.ps1')
+. (Join-Path $PSScriptRoot 'scripts/llm/common.ps1')
 $root = [IO.Path]::GetFullPath($PSScriptRoot)
+$llmSelection = $null
+if ($Action -eq 'Start' -and $Mode -eq 'Full') { $llmSelection = Get-LlmSelection $root -ForDemo }
 $demo = Assert-DemoPath $root (Join-Path $root '.demo')
 $runtime = Join-Path $demo 'runtime'
 $readyFile = Join-Path $demo 'prepared.json'
@@ -85,14 +89,9 @@ function Start-DemoComponent([string]$Name,[string]$Executable,[string[]]$Argume
     Write-DemoJson $config @{ name=$Name; executable=$Executable; arguments=$Arguments; workingDirectory=$WorkingDirectory; runtimeDir=$runtime; stdout=(Join-Path $demo "logs/$Name.stdout.log"); stderr=(Join-Path $demo "logs/$Name.stderr.log") }
     $shell = (Get-Process -Id $PID).Path
     $shellArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $root 'scripts/runtime/supervise.ps1'),'-Config',$config)
-    $savedSecrets = @{}
-    foreach ($key in @('OPENAI_API_KEY','APP_JWT_SECRET','MONITORING_DEMO_AGENT_TOKEN')) {
-        $savedSecrets[$key] = [Environment]::GetEnvironmentVariable($key,'Process')
-        $allowed = ($Name -eq 'backend' -and $key -in @('OPENAI_API_KEY','APP_JWT_SECRET')) -or ($Name -eq 'agent' -and $key -eq 'MONITORING_DEMO_AGENT_TOKEN')
-        if (-not $allowed) { [Environment]::SetEnvironmentVariable($key,$null,'Process') }
-    }
-    try { $process = Start-Process -FilePath $shell -ArgumentList (($shellArgs | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' ') -WindowStyle Hidden -PassThru }
-    finally { foreach ($key in $savedSecrets.Keys) { [Environment]::SetEnvironmentVariable($key,$savedSecrets[$key],'Process') } }
+    $selectedRuntime = $(if ($llmSelection) { $llmSelection.runtime } else { '' })
+    $childEnvironment = Get-DemoChildEnvironment $Name $selectedRuntime
+    $process = Start-Process -FilePath $shell -ArgumentList (($shellArgs | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' ') -Environment $childEnvironment -WindowStyle Hidden -PassThru
     $until = [DateTime]::UtcNow.AddSeconds(15)
     while (-not (Test-Path -LiteralPath (Join-Path $runtime "$Name.processes.json"))) {
         $process.Refresh()
@@ -135,6 +134,9 @@ try {
         if (Test-Path -LiteralPath $stateFile) {
             $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
             if ($state.mode -eq $Mode -and $state.frontendPort -eq $FrontendPort -and $state.backendPort -eq $BackendPort -and $state.servicePort -eq $ServicePort) {
+                if ($Mode -eq 'Full' -and (($state.PSObject.Properties.Name -notcontains 'llmRuntime') -or $state.llmRuntime -ne $llmSelection.runtime -or $state.llmProvider -ne $llmSelection.provider -or $state.llmModel -ne $llmSelection.model)) {
+                    throw 'The running demo has a different LLM configuration. It was preserved; stop it explicitly before changing providers.'
+                }
                 Wait-DemoHttp "$frontendBase/login" 8
                 if ($Mode -eq 'Full') { Wait-DemoHttp "$backendBase/api/health" 8; Wait-DemoHttp "$serviceBase/health" 8 }
                 Write-Host "Demo is already running ($Mode): $frontendBase/login"
@@ -154,6 +156,7 @@ try {
     $env:NEXT_PUBLIC_API_BASE_URL = $(if ($Mode -eq 'Full') { $backendBase } else { '' })
     $env:NEXT_BUILD_DIR = $(if ($Mode -eq 'Full') { '.next-demo-full' } else { '.next-demo-frontend' })
     if (-not (Test-Path -LiteralPath (Join-Path $root "frontend/$env:NEXT_BUILD_DIR/BUILD_ID"))) { throw 'Selected production build is missing. Run .\demo.ps1 -Action Prepare.' }
+    if ($Mode -eq 'Full') { Invoke-LlmDiagnostic $root 'Diagnose' }
     try {
         if ($Mode -eq 'Full') {
             New-Item -ItemType Directory -Force -Path (Join-Path $demo 'data'),(Join-Path $demo 'storage') | Out-Null
@@ -195,7 +198,7 @@ try {
         }
         Start-DemoComponent 'frontend' $ready.node @((Join-Path $root 'frontend/node_modules/next/dist/bin/next'),'start','-p',"$FrontendPort",'-H','127.0.0.1') (Join-Path $root 'frontend')
         Wait-DemoHttp "$frontendBase/login" 90
-        Write-DemoJson $stateFile @{mode=$Mode; frontendPort=$FrontendPort; backendPort=$BackendPort; servicePort=$ServicePort; startedAt=[DateTimeOffset]::UtcNow.ToString('o'); frontend="$frontendBase/login"}
+        Write-DemoJson $stateFile @{mode=$Mode; frontendPort=$FrontendPort; backendPort=$BackendPort; servicePort=$ServicePort; startedAt=[DateTimeOffset]::UtcNow.ToString('o'); frontend="$frontendBase/login"; llmRuntime=$(if ($llmSelection) {$llmSelection.runtime} else {$null}); llmProvider=$(if ($llmSelection) {$llmSelection.provider} else {$null}); llmModel=$(if ($llmSelection) {$llmSelection.model} else {$null})}
         Write-Host "Demo ready ($Mode): $frontendBase/login"
         Write-Host 'Account: admin@xisnd.com / test1234 | stop: .\demo-stop.ps1 | reset: .\demo-reset.ps1'
     } catch { Stop-DemoProcesses $runtime; throw }

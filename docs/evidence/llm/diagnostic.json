@@ -1,0 +1,8 @@
+{
+  "completedAt": "2026-09-21T11:46:27.1104125+00:00",
+  "result": "PASS",
+  "modelHttpRequests": 0,
+  "checks": [
+    "PASS 2 Java diagnostics: timeout typo exit2, synthetic expired auth exit3, exact Korean messages through ASCII JSON, parent console unchanged; no model HTTP."
+  ]
+}

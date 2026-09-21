@@ -7,18 +7,44 @@ Java 17 · Spring Boot 3.3 · Gradle · Spring Security(JWT) · Spring Data JPA
 
 ## 실행
 
-```bash
-./gradlew bootRun     # 기본 local 프로파일 = H2 파일 DB(./data), 설치 없이 바로 기동
-./gradlew test
-./gradlew build
+PowerShell에서 직접 실행할 때 먼저 프로젝트 전용 Codex 로그인을 완료하고 실제 사용 가능한 모델을 명시한다.
+`application-local.yml`은 배포 JAR에 포함되지 않으므로 외부 설정 위치를 직접 지정해야 한다.
+
+```powershell
+# backend 디렉터리에서 실행. 이미 작성한 local 설정이 있으면 복사를 생략한다.
+Copy-Item src/main/resources/application-local.example.yml src/main/resources/application-local.yml
+$env:SPRING_CONFIG_ADDITIONAL_LOCATION='file:./src/main/resources/application-local.yml'
+$env:APP_RUNTIME='local'
+$env:LLM_PROVIDER='codex_oauth'
+$env:CODEX_MODEL='<사용 권한이 있는 모델 이름>'
+$env:CODEX_AUTH_FILE='<저장소와 기본 .codex 밖의 프로젝트 전용 auth.json 절대 경로>'
+$env:APP_JWT_SECRET='<32바이트 이상의 로컬 JWT 비밀값>'
+./gradlew.bat bootRun
+./gradlew.bat test     # 테스트 자식 프로세스는 test/mock으로 고정, 실모델 호출 없음
+./gradlew.bat build
 ```
 
-MySQL 로 전환:
+복사한 local 예제는 `127.0.0.1`에만 바인딩하며 H2 파일 DB(`./data/local`)를 사용한다.
+통합 데모의 로그인·시작·종료는 루트 README의 `llm.ps1`, `demo.ps1`을 따른다.
+
+MySQL 배포는 local 외부 설정 변수를 제거한 별도 실행 환경에서 다음 값을 명시한다:
 
 ```bash
+APP_RUNTIME=deployed LLM_PROVIDER=openai_api OPENAI_MODEL='<explicit-model>' OPENAI_API_KEY='<deployment-key>' \
 DB_HOST=localhost DB_PORT=3306 DB_NAME=monitoring DB_USERNAME=... DB_PASSWORD=... \
   ./gradlew bootRun --args='--spring.profiles.active=mysql'
 ```
+
+실제 비밀값을 명령 기록이나 저장소에 남기지 말고 배포 환경의 비밀변수로 주입한다.
+`APP_RUNTIME`과 `LLM_PROVIDER`는 대문자 프로세스 환경변수가 권위이며 Spring 설정으로 덮어쓸 수 없다.
+선택 조합은 `local/codex_oauth`, `deployed/openai_api`, 테스트 전용 `test/mock`뿐이다.
+local은 API 키를 조회하지 않고, deployed는 OAuth 파일 경로를 조회하거나 파일을 읽지 않는다.
+인증 실패 시 다른 공급자로 재시도하지 않으며 제품 기능은 고정 경고와 함께 비 AI LOCAL 템플릿으로 대체한다.
+
+`./gradlew.bat -q llmDiagnose`는 모델 네트워크 요청 없이 설정을 확인한다.
+`./gradlew.bat -q llmSmoke`는 선택한 공급자에 최소 구조화 요청을 1회 실행한다.
+성공 출력은 `runtime`, `provider`, `model`, `authConfigured` 네 필드만 포함하고, 실패는 안전한 `code`와 `message`를 추가한다.
+실패 종료 코드 구분은 루트 `llm.ps1`을 사용한다. `LLM_TIMEOUT_SECONDS`는 기본 4초이며 1~60초로 명시 가능하다.
 
 ## 환경변수
 
@@ -33,6 +59,10 @@ DB_HOST=localhost DB_PORT=3306 DB_NAME=monitoring DB_USERNAME=... DB_PASSWORD=..
 | `APP_METRIC_RETENTION_DAYS` | `30` | 서버 지표 보관 일수 |
 | `APP_DETECTION_ENABLED` | `true` | 이상 탐지(1분 주기) 사용 여부 |
 | `APP_PUBLIC_URL` | 없음 | 알림 메시지의 "플랫폼에서 보기" 링크 주소 |
+| `APP_RUNTIME` / `LLM_PROVIDER` | 없음 | 위의 명시적 실행 환경·공급자 조합 필수 |
+| `CODEX_MODEL` / `CODEX_AUTH_FILE` | 없음 | local 전용 모델 및 프로젝트 전용 외부 인증 파일 |
+| `OPENAI_MODEL` / `OPENAI_API_KEY` | 없음 | deployed 전용 모델 및 API 키 |
+| `LLM_TIMEOUT_SECONDS` | `4` | 응답 본문을 포함한 요청 제한 시간, 1~60초 |
 
 이상 탐지 기준값은 `app.detection.*` (cpu-warn 90, disk-warn 90, error-burst 20 등, `DetectionProperties`),
 Slack 주소 허용 목록은 `app.alerts.slack-allowed-prefixes`, 에이전트 설치 파일 경로는 `app.agent.installer-path`.

@@ -1,0 +1,81 @@
+{
+  "completedAt": "2026-09-21T20:39:59.9354563+09:00",
+  "result": "PASS",
+  "command": "gradlew.bat --no-daemon --offline --console=plain clean test bootJar",
+  "runtime": "test",
+  "provider": "mock",
+  "modelHttpRequests": 0,
+  "suites": [
+    {
+      "name": "com.xisnd.monitoring.AgentTelemetryAlertTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.AnalysisFlowTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.AuthAndProjectFlowTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.DashboardAndAccountTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.DemoFlowTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.EnumColumnMigrationTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmProviderBoundaryTest",
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmSseCompletionTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmTransportTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.OpenAiContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "scope": "Independent run before final empty/null completed-output compatibility and diagnostic encoding fixes; not the final release verdict."
+}

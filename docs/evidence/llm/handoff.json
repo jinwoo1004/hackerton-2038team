@@ -1,0 +1,27 @@
+{
+  "completedAt": "2026-09-21T11:55:08.9735737+00:00",
+  "result": "PASS",
+  "outVerificationProcesses": "STOPPED",
+  "originalAppListeners": [
+    {
+      "LocalAddress": "::",
+      "LocalPort": 8080,
+      "OwningProcess": 13104
+    },
+    {
+      "LocalAddress": "::",
+      "LocalPort": 3200,
+      "OwningProcess": 14372
+    },
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 8000,
+      "OwningProcess": 9764
+    }
+  ],
+  "seedDatabase": "PRESERVED: .demo/data/monitoring.mv.db (no Reset after browser verification)",
+  "fullFixtureScore": 69,
+  "fullFixtureFindings": 9,
+  "openIncidentsAfterRecovery": 0,
+  "nextOwner": "MAIN: local/codex_oauth Full startup"
+}

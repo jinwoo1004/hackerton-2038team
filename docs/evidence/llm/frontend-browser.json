@@ -1,0 +1,316 @@
+{
+  "mode": "frontend",
+  "started": "2026-09-21T11:51:04.357Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "checks": [
+    {
+      "name": "login and projects",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "name": "MD seed analysis matches fixture",
+      "status": "PASS",
+      "details": {
+        "score": 69,
+        "overview": {
+          "score": 69,
+          "grade": "D",
+          "critical": 0,
+          "warning": 5,
+          "info": 4
+        },
+        "codeLines": 28,
+        "totalLines": 29,
+        "largestFiles": [
+          {
+            "path": "src/WallpadClient.ts",
+            "lines": 29
+          }
+        ],
+        "findings": 9
+      }
+    },
+    {
+      "name": "one ONLINE Agent",
+      "status": "PASS",
+      "details": [
+        {
+          "id": 14,
+          "state": "ONLINE",
+          "version": "demo-v1"
+        }
+      ]
+    },
+    {
+      "name": "collected recent logs",
+      "status": "PASS",
+      "details": {
+        "count": 20
+      }
+    },
+    {
+      "name": "CPU/memory/disk charts and actual time series table",
+      "status": "PASS",
+      "details": {
+        "chartNames": [
+          "CPU 사용률 추이",
+          "메모리 사용률 추이",
+          "디스크 사용률 추이"
+        ],
+        "tableRows": 36
+      }
+    },
+    {
+      "name": "both incident scenarios, <10s, dedup, insight and Slack evidence",
+      "status": "PASS",
+      "details": [
+        {
+          "scenario": "LATENCY",
+          "elapsedMs": 213,
+          "incidentId": 38,
+          "responseMs": 3200,
+          "timeoutCount": 8,
+          "errorCount": 3,
+          "deduplicated": true,
+          "dom": {
+            "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n0개\n주의\n0개\n위험\n1개\n최근 7일 이상 이벤트 추이\n진행 중 1건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n1 / 0\n\n09-21",
+            "values": [
+              "1개",
+              "0개",
+              "0개",
+              "1개"
+            ],
+            "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n1 / 0\n\n09-21"
+          }
+        },
+        {
+          "scenario": "ERROR_SPIKE",
+          "elapsedMs": 207,
+          "incidentId": 51,
+          "responseMs": 450,
+          "timeoutCount": 2,
+          "errorCount": 24,
+          "deduplicated": true,
+          "dom": {
+            "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n0개\n주의\n0개\n위험\n1개\n최근 7일 이상 이벤트 추이\n진행 중 2건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21",
+            "values": [
+              "1개",
+              "0개",
+              "0개",
+              "1개"
+            ],
+            "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21"
+          }
+        }
+      ]
+    },
+    {
+      "name": "monitoring/dashboard immediate counts and incident trend after trigger/recovery",
+      "status": "PASS",
+      "details": {
+        "open": {
+          "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n0개\n주의\n0개\n위험\n1개\n최근 7일 이상 이벤트 추이\n진행 중 2건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21",
+          "values": [
+            "1개",
+            "0개",
+            "0개",
+            "1개"
+          ],
+          "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21"
+        },
+        "recovered": {
+          "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n1개\n주의\n0개\n위험\n0개\n최근 7일 이상 이벤트 추이\n진행 중 0건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 2\n\n09-21",
+          "values": [
+            "1개",
+            "1개",
+            "0개",
+            "0개"
+          ],
+          "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 2\n\n09-21"
+        }
+      }
+    },
+    {
+      "name": "wizard actual PDF parsing and source-mapped citation",
+      "status": "PASS",
+      "details": {
+        "projectId": 82,
+        "quote": "규칙 출처: rules.pdf · 1쪽\n\n1. Do not use `console.log` in application source. Use a structured logger."
+      }
+    },
+    {
+      "name": "wizard actual XLSX parsing and source-mapped citation",
+      "status": "PASS",
+      "details": {
+        "projectId": 91,
+        "quote": "규칙 출처: rules.xlsx · sheet1.xml\n\nDEMO-01 | Do not use `console.log` in application source. Use a structured logger."
+      }
+    },
+    {
+      "name": "wizard actual DOCX parsing and source-mapped citation",
+      "status": "PASS",
+      "details": {
+        "projectId": 100,
+        "quote": "규칙 출처: rules.docx\n\nDo not use `console.log` in application source. Use a structured logger."
+      }
+    },
+    {
+      "name": "project overview/files/settings, analysis, events, alert settings navigation",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "name": "frontend reset preserves unrelated projects and deterministic reseed",
+      "status": "PASS",
+      "details": {
+        "beforeCount": 4,
+        "afterCount": 3,
+        "retainedProjectIds": [
+          82,
+          91,
+          100
+        ],
+        "seedScore": 69
+      }
+    },
+    {
+      "name": "browser console and network error free",
+      "status": "PASS",
+      "details": {
+        "pageErrors": 0,
+        "consoleErrors": 0,
+        "networkErrors": 0,
+        "requestHosts": [
+          "localhost:13200"
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "network": [],
+  "console": [],
+  "screenshots": [
+    "frontend-login.png",
+    "frontend-analysis-md.png",
+    "frontend-agents.png",
+    "frontend-logs.png",
+    "frontend-resources.png",
+    "frontend-resource-tables.png",
+    "frontend-incident-latency.png",
+    "frontend-incident-error_spike.png",
+    "frontend-dashboard-open.png",
+    "frontend-monitoring-recovered.png",
+    "frontend-dashboard-recovered.png",
+    "frontend-wizard-pdf-step1.png",
+    "frontend-wizard-pdf-step3.png",
+    "frontend-wizard-pdf-step5.png",
+    "frontend-analysis-pdf.png",
+    "frontend-wizard-xlsx-step1.png",
+    "frontend-wizard-xlsx-step3.png",
+    "frontend-wizard-xlsx-step5.png",
+    "frontend-analysis-xlsx.png",
+    "frontend-wizard-docx-step1.png",
+    "frontend-wizard-docx-step3.png",
+    "frontend-wizard-docx-step5.png",
+    "frontend-analysis-docx.png",
+    "frontend-project-overview.png",
+    "frontend-project-files.png",
+    "frontend-project-settings.png",
+    "frontend-analysis-history.png",
+    "frontend-events.png",
+    "frontend-alert-settings.png"
+  ],
+  "baseline": {
+    "projectId": 2,
+    "projectCount": 1,
+    "analysis": {
+      "score": 69,
+      "overview": {
+        "score": 69,
+        "grade": "D",
+        "critical": 0,
+        "warning": 5,
+        "info": 4
+      },
+      "codeLines": 28,
+      "totalLines": 29,
+      "largestFiles": [
+        {
+          "path": "src/WallpadClient.ts",
+          "lines": 29
+        }
+      ],
+      "findings": 9
+    },
+    "agents": [
+      {
+        "id": 14,
+        "state": "ONLINE",
+        "version": "demo-v1"
+      }
+    ],
+    "logs": 20,
+    "incidents": []
+  },
+  "beforeIncident": {
+    "dom": {
+      "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n1개\n주의\n0개\n위험\n0개\n최근 7일 이상 이벤트 추이\n진행 중 0건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n0 / 0\n\n09-21",
+      "values": [
+        "1개",
+        "1개",
+        "0개",
+        "0개"
+      ],
+      "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n0 / 0\n\n09-21"
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "LATENCY",
+      "elapsedMs": 213,
+      "incidentId": 38,
+      "responseMs": 3200,
+      "timeoutCount": 8,
+      "errorCount": 3,
+      "deduplicated": true,
+      "dom": {
+        "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n0개\n주의\n0개\n위험\n1개\n최근 7일 이상 이벤트 추이\n진행 중 1건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n1 / 0\n\n09-21",
+        "values": [
+          "1개",
+          "0개",
+          "0개",
+          "1개"
+        ],
+        "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n1 / 0\n\n09-21"
+      }
+    },
+    {
+      "scenario": "ERROR_SPIKE",
+      "elapsedMs": 207,
+      "incidentId": 51,
+      "responseMs": 450,
+      "timeoutCount": 2,
+      "errorCount": 24,
+      "deduplicated": true,
+      "dom": {
+        "text": "실시간 프로젝트 상태\n\n진행 중인 incident 기준 · 5초마다 갱신\n\n전체\n1개\n정상\n0개\n주의\n0개\n위험\n1개\n최근 7일 이상 이벤트 추이\n진행 중 2건 · 발생 / 해결\n\n0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21",
+        "values": [
+          "1개",
+          "0개",
+          "0개",
+          "1개"
+        ],
+        "trend": "0 / 0\n\n09-15\n\n0 / 0\n\n09-16\n\n0 / 0\n\n09-17\n\n0 / 0\n\n09-18\n\n0 / 0\n\n09-19\n\n0 / 0\n\n09-20\n\n2 / 0\n\n09-21"
+      }
+    }
+  ],
+  "coreFlowMs": 16183,
+  "requestHosts": [
+    "localhost:13200"
+  ],
+  "completed": "2026-09-21T11:51:55.637Z"
+}

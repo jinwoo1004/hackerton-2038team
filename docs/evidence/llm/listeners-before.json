@@ -1,0 +1,32 @@
+[
+  {
+    "LocalAddress": "::",
+    "LocalPort": 8080,
+    "OwningProcess": 13104
+  },
+  {
+    "LocalAddress": "::",
+    "LocalPort": 3200,
+    "OwningProcess": 14372
+  },
+  {
+    "LocalAddress": "127.0.0.1",
+    "LocalPort": 18080,
+    "OwningProcess": 34484
+  },
+  {
+    "LocalAddress": "127.0.0.1",
+    "LocalPort": 18000,
+    "OwningProcess": 33980
+  },
+  {
+    "LocalAddress": "127.0.0.1",
+    "LocalPort": 13200,
+    "OwningProcess": 34672
+  },
+  {
+    "LocalAddress": "127.0.0.1",
+    "LocalPort": 8000,
+    "OwningProcess": 9764
+  }
+]

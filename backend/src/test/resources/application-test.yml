@@ -11,6 +11,10 @@ spring:
     open-in-view: false
 
 app:
+  llm:
+    runtime: test
+    provider: mock
+    timeout-seconds: 4
   jwt:
     secret: test-only-secret-key-with-enough-length-0123456789
     expiration-minutes: 60

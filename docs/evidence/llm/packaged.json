@@ -1,0 +1,45 @@
+{
+  "completedAt": "2026-09-21T11:46:08.6899114+00:00",
+  "result": "PASS",
+  "modelHttpRequests": 0,
+  "checks": [
+    {
+      "name": "JAR mock Diagnose",
+      "result": "PASS",
+      "exitCode": 0,
+      "metadata": {
+        "runtime": "test",
+        "provider": "mock",
+        "model": "mock-structured",
+        "authConfigured": false
+      }
+    },
+    {
+      "name": "JAR mock Smoke",
+      "result": "PASS",
+      "exitCode": 0,
+      "metadata": {
+        "runtime": "test",
+        "provider": "mock",
+        "model": "mock-structured",
+        "authConfigured": false
+      }
+    },
+    {
+      "name": "Missing selectors cannot be supplied through Spring aliases",
+      "result": "PASS",
+      "exitCode": 2,
+      "springStarted": false,
+      "code": "CONFIG_INVALID"
+    },
+    {
+      "name": "Deployed missing key ignores invalid OAuth path",
+      "result": "PASS",
+      "exitCode": 3,
+      "metadata": {
+        "code": "API_KEY_REQUIRED",
+        "message": "배포 환경의 API 인증 설정을 확인하세요."
+      }
+    }
+  ]
+}

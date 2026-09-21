@@ -13,6 +13,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 public class MonitoringApplication {
 
     public static void main(String[] args) {
+        try {
+            com.xisnd.monitoring.llm.LlmSettings.load(System::getenv, com.xisnd.monitoring.llm.LlmFactory.repositoryRoot());
+        } catch (com.xisnd.monitoring.llm.LlmException error) {
+            System.err.println("AI configuration [" + error.code().name() + "]: " + error.getMessage());
+            System.exit(error.code().exitCode());
+            return;
+        }
         SpringApplication.run(MonitoringApplication.class, args);
     }
 }

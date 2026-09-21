@@ -29,6 +29,20 @@ function ConvertTo-NativeArgument([string]$Value) {
     return '"' + [regex]::Replace([regex]::Replace($Value, '(\\*)"', '$1$1\"'), '(\\+)$', '$1$1') + '"'
 }
 
+function Get-DemoChildEnvironment([string]$Name,[string]$LlmRuntime) {
+    $overrides = @{}
+    foreach ($key in @('APP_RUNTIME','LLM_PROVIDER','CODEX_HOME','CODEX_MODEL','CODEX_AUTH_FILE','OPENAI_MODEL','OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN','APP_JWT_SECRET','MONITORING_DEMO_AGENT_TOKEN')) {
+        $allowed = ($Name -eq 'backend' -and (
+            $key -in @('APP_RUNTIME','LLM_PROVIDER','APP_JWT_SECRET') -or
+            ($LlmRuntime -eq 'local' -and $key -in @('CODEX_MODEL','CODEX_AUTH_FILE')) -or
+            ($LlmRuntime -eq 'deployed' -and $key -in @('OPENAI_MODEL','OPENAI_API_KEY'))
+        )) -or ($Name -eq 'agent' -and $key -eq 'MONITORING_DEMO_AGENT_TOKEN')
+        if (-not $allowed) { $overrides[$key] = $null }
+    }
+    # Start-Process applies these overrides to the child only, preserving every parent variable.
+    return $overrides
+}
+
 function Get-DemoIdentity([int]$ProcessId) {
     $p = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
     if (-not $p) { return $null }

@@ -5,7 +5,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const mode=process.argv[2]||'full';
 const base='http://localhost:13200';
-const evidence=path.resolve('docs/evidence');
+const evidence=path.resolve(process.env.VERIFICATION_EVIDENCE_DIR || 'docs/evidence');
 fs.mkdirSync(evidence,{recursive:true});
 const report={mode,started:new Date().toISOString(),viewport:{width:1440,height:900},checks:[],errors:[],network:[],console:[],screenshots:[]};
 let browser,page;

@@ -1,4 +1,5 @@
-const fs=require('node:fs');const assert=require('node:assert/strict');
+const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+const evidence=path.resolve(process.env.VERIFICATION_EVIDENCE_DIR || 'docs/evidence');fs.mkdirSync(evidence,{recursive:true});
 const base='http://localhost:18080';const report={started:new Date().toISOString(),checks:[]};
 async function req(route,token,method='GET',body){const r=await fetch(base+route,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});const text=await r.text();return {status:r.status,body:text?JSON.parse(text):null};}
 (async()=>{
@@ -13,5 +14,5 @@ async function req(route,token,method='GET',body){const r=await fetch(base+route
  const update=await req(`/api/projects/${p.body.id}`,token,'PUT',{name:'Code invariant verification updated',nickname:'synthetic',description:'verification',projectCode:'ILLEGAL-CHANGE',technologies:[]});assert.equal(update.status,200);const again=await req(`/api/projects/${p.body.id}`,token);assert.equal(again.body.projectCode,code);report.checks.push({name:'project code is immutable after update',status:'PASS'});
  await req(`/api/projects/${p.body.id}`,token,'DELETE');
  const channels=await req('/api/alerts/channels',token);assert.equal(channels.status,200);report.slackChannelCount=channels.body.length;
- console.log(JSON.stringify(report));fs.writeFileSync('docs/evidence/api.json',JSON.stringify(report,null,2));
+ console.log(JSON.stringify(report));fs.writeFileSync(path.join(evidence,'api.json'),JSON.stringify(report,null,2));
 })().catch(e=>{console.error(e.message);process.exitCode=1});

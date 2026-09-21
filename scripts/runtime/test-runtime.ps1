@@ -2,6 +2,11 @@ param([switch]$Lifecycle,[int]$FrontendPort=3200,[int]$BackendPort=8080,[int]$Se
 . (Join-Path $PSScriptRoot 'common.ps1')
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $launcher = Join-Path $root 'demo.ps1'
+$savedRuntime = [Environment]::GetEnvironmentVariable('APP_RUNTIME','Process')
+$savedProvider = [Environment]::GetEnvironmentVariable('LLM_PROVIDER','Process')
+$env:APP_RUNTIME = 'test'
+$env:LLM_PROVIDER = 'mock'
+try {
 $runtime = Join-Path $root '.demo/runtime'
 if (@(Get-DemoRecords $runtime | Where-Object { Test-DemoIdentity $_ }).Count -gt 0) { throw 'Stop the running demo before this verification.' }
 $passed = @()
@@ -80,3 +85,7 @@ if ($Lifecycle) {
     $passed += 'PASS frontend-only offline start and safe data reset'
 }
 $passed | ForEach-Object { Write-Host $_ }
+} finally {
+    [Environment]::SetEnvironmentVariable('APP_RUNTIME',$savedRuntime,'Process')
+    [Environment]::SetEnvironmentVariable('LLM_PROVIDER',$savedProvider,'Process')
+}

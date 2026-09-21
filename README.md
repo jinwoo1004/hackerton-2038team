@@ -15,18 +15,19 @@ Spring Boot 가 전체 오케스트레이터 역할을 한다.
 
 ## 해커톤 원클릭 실행
 
-Windows에서 Node.js, JDK 17, .NET 8 SDK를 준비하고 OUT 루트에서 실행한다. Python 3.11과 프로젝트 의존성은 준비 단계에서 설치한다.
+Windows에서 PowerShell 7.4 이상, Node.js, JDK 17, .NET 8 SDK를 준비하고 OUT 루트에서 실행한다. Python 3.11과 프로젝트 의존성은 준비 단계에서 설치한다.
 
 ```powershell
 .\demo.ps1 -Action Prepare    # 온라인 사전 준비와 production build
+.\llm.ps1 -Action Login -Model '<워크스페이스에서 확인한 모델>'
 .\demo.ps1 -Offline           # 전체 스택과 합성 Agent 실행
 .\demo-stop.ps1              # 이 작업에서 기동한 프로세스만 중지
 .\demo-reset.ps1             # 시연 DB/업로드 초기화, 빌드는 유지
 ```
 
-로그인: `http://localhost:3200/login`, `admin@xisnd.com` / `test1234`. 처음부터 `demo.ps1`만 실행하면 준비 후 시작한다. `-Mode Frontend -Offline`은 백엔드 없는 백업이다. 기본 포트가 사용 중이면 `-FrontendPort 13200 -BackendPort 18080 -ServicePort 18000`을 Prepare/Start 양쪽에 지정한다.
+로그인: `http://localhost:3200/login`, `admin@xisnd.com` / `test1234`. Full 실행에는 명시적인 AI runtime/provider 설정이 필요하며 로그인 스크립트는 같은 PowerShell에 local/codex_oauth를 설정한다. `-Offline`은 빌드 의존성 준비를 생략하는 옵션이며 OAuth 호출에는 인터넷이 필요하다. `-Mode Frontend -Offline`은 백엔드 없는 규칙 기반 백업이다. 기본 포트가 사용 중이면 `-FrontendPort 13200 -BackendPort 18080 -ServicePort 18000`을 Prepare/Start 양쪽에 지정한다.
 
-OpenAI 키는 실행 환경에만 `$env:OPENAI_API_KEY = '<로컬 키>'`로 설정한다. 키가 없거나 연결이 실패하면 규칙 추출과 incident 설명을 로컬에서 생성한다. 실제 키를 파일이나 Git에 넣지 않는다. [5분 대본·클릭 순서·복구 방법](DEMO.md), [추가 API](backend/DEMO-API.md), [구현 기준](docs/IMPLEMENTATION.md), [독립 검증 결과와 미검증 항목](docs/VERIFICATION.md)을 참고한다.
+AI 호출은 **local/codex_oauth**, **deployed/openai_api**, **test/mock**으로 명시적으로 분리한다. API key는 배포 secret에서만 사용한다. OAuth 실패가 유료 API 호출로 전환되지 않으며, 배포에서는 OAuth 파일을 읽지 않는다. 완전 오프라인 반복 검증은 `$env:APP_RUNTIME='test'; $env:LLM_PROVIDER='mock'`을 명시한다. [AI 최초 로그인·촬영·배포 설정](docs/AI-CONNECTION.md), [AI 연결 검증](docs/LLM-VERIFICATION.md), [5분 대본·복구 방법](DEMO.md), [추가 API](backend/DEMO-API.md)를 참고한다. 이전 MVP 검증 기록은 [기존 검증 보고서](docs/VERIFICATION.md)에 보존한다.
 
 ---
 
@@ -65,24 +66,18 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 
 ### 2. Backend
 
-```bash
+먼저 [AI 연결 안내](docs/AI-CONNECTION.md)의 환경변수와 로컬 `APP_JWT_SECRET`을 설정한다. AI 경로는 Spring profile과 별도로 명시해야 한다. 외부 설정으로 읽는 실제 local 파일은 JAR에 포함하지 않는다.
+
+```powershell
 cd backend
-cp src/main/resources/application-local.example.yml src/main/resources/application-local.yml
-./gradlew bootRun          # http://localhost:8080 (기본 local 프로파일 = H2)
+Copy-Item src/main/resources/application-local.example.yml src/main/resources/application-local.yml
+$env:SPRING_CONFIG_ADDITIONAL_LOCATION='file:./src/main/resources/application-local.yml'
+.\gradlew.bat bootRun --args='--server.address=127.0.0.1'  # H2, localhost:8080
 ```
 
-MySQL 로 전환:
+MySQL은 DB 환경변수를 공급하고 `mysql` 프로파일로 실행한다. 배포에서는 `APP_RUNTIME=deployed`, `LLM_PROVIDER=openai_api`와 배포 secret을 사용한다. 상세 명령은 [Backend 안내](backend/README.md)를 참고한다.
 
-```bash
-DB_HOST=localhost DB_NAME=monitoring DB_USERNAME=... DB_PASSWORD=... \
-  ./gradlew bootRun --args='--spring.profiles.active=mysql'
-```
-
-분석 서비스는 기본으로 `http://localhost:8000` 을 호출한다. 다른 포트를 쓰면:
-
-```bash
-APP_ANALYSIS_BASE_URL=http://localhost:9016 ./gradlew bootRun
-```
+분석 서비스는 기본으로 `http://localhost:8000`을 호출한다. 다른 포트는 `APP_ANALYSIS_BASE_URL` 환경변수로 지정한다.
 
 분석 서비스 없이 띄우려면 `APP_ANALYSIS_ENABLED=false` (분석 요청은 바로 실패로 기록된다).
 

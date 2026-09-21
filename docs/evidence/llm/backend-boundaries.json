@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-09-21T11:45:42.9335157+00:00",
+  "completedAt": "2026-09-21T11:46:04.4412152+00:00",
+  "result": "PASS",
+  "command": "gradlew.bat --no-daemon --offline --console=plain test --rerun-tasks --tests com.xisnd.monitoring.llm.* --tests com.xisnd.monitoring.OpenAiContractTest",
+  "runtime": "test",
+  "provider": "mock",
+  "liveModelRequests": 0,
+  "requestIsolation": "Provider/transport use in-memory fakes; feature service stub is loopback only. No live credentials are inherited.",
+  "exitCode": 0,
+  "suites": [
+    {
+      "name": "com.xisnd.monitoring.llm.LlmProviderBoundaryTest",
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmTransportTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.llm.LlmSseCompletionTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.xisnd.monitoring.OpenAiContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}

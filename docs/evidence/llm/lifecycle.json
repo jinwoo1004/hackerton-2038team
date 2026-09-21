@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-09-21T11:47:39.3344473+00:00",
+  "completedAt": "2026-09-21T11:48:42.6283574+00:00",
+  "result": "PASS",
+  "runtime": "test",
+  "provider": "mock",
+  "modelHttpRequests": 0,
+  "checks": [
+    "PASS occupied port 3200: rejected without terminating its owner",
+    "PASS occupied port 8080: rejected without terminating its owner",
+    "PASS occupied port 8000: rejected without terminating its owner",
+    "PASS reset path guard: outside workspace rejected",
+    "PASS orphan recovery: owned child stopped after supervisor was terminated",
+    "PASS reused PID guard: mismatched process creation time rejected",
+    "PASS full-stack clean start and duplicate start",
+    "PASS full-stack stop: ports 13200, 18080, 18000 released",
+    "PASS frontend-only offline start and safe data reset"
+  ]
+}
