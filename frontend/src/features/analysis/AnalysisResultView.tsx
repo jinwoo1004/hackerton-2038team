@@ -301,6 +301,7 @@ function RuleCard({ result }: { result: AnalysisResult }) {
     <Card>
       <CardHeader title="프로젝트 규칙 반영" description="규칙 문서에서 읽어 분석에 적용한 기준입니다." />
       <CardBody className="space-y-4">
+        {rules.extractionSource && <p className="text-[12px] font-semibold text-primary-600">{rules.extractionSource === "OPENAI" ? "OpenAI 규칙 추출 + 정적 검사" : "로컬 규칙 추출 + 정적 검사"}</p>}
         {rules.documents.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-ink-400">
             등록된 규칙 문서가 없어 기본 기준으로 분석했습니다. 프로젝트 파일 탭에서 규칙 문서를 등록하면

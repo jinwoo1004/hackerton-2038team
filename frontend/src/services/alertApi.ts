@@ -13,7 +13,7 @@ import { mockApi } from "./mock/store";
 
 export const incidentApi = {
   list(params: { projectId?: number; status?: IncidentStatus; limit?: number } = {}): Promise<Incident[]> {
-    if (USE_MOCK) return mockApi.incidents();
+    if (USE_MOCK) return mockApi.incidents(params);
     const q = new URLSearchParams();
     if (params.projectId) q.set("projectId", String(params.projectId));
     if (params.status) q.set("status", params.status);

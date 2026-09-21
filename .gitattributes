@@ -1,0 +1,17 @@
+# Binary fixtures and original fonts must survive Windows checkout byte-for-byte.
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.png binary
+*.ico binary
+*.jar binary
+
+# Keep deterministic fixture hashes and generated source ZIP stable after checkout.
+/demo-fixtures/*.md text eol=lf
+/demo-fixtures/*.json text eol=lf
+/demo-fixtures/*.log text eol=lf
+/demo-fixtures/source/*.ts text eol=lf

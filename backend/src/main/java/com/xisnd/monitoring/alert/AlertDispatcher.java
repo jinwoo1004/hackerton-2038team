@@ -164,7 +164,7 @@ public class AlertDispatcher {
                         ? incident.getResolvedAt() : incident.getOpenedAt()).format(TIME));
 
         String detail = incident.getDetail();
-        if (kind != DeliveryKind.RESOLVED) {
+        {
             Optional<String> summary = insight.stream().findFirst().flatMap(i -> i.summarize(incident));
             if (summary.isPresent()) {
                 detail = detail == null ? summary.get() : detail + "\n\n" + summary.get();

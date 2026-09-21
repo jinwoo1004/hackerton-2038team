@@ -93,6 +93,11 @@ public class Agent {
         this.connected = false;
     }
 
+    public void rotateToken(String token) {
+        this.tokenHash = AgentTokens.hash(token);
+        this.tokenPrefix = AgentTokens.displayPrefix(token);
+    }
+
     public AgentState state(LocalDateTime now) {
         if (lastSeenAt == null) {
             return AgentState.PENDING;

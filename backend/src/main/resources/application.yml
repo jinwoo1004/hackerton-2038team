@@ -21,6 +21,12 @@ server:
       force: true
 
 app:
+  llm:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-4.1-mini}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:4}
   jwt:
     # 운영에서는 APP_JWT_SECRET 로 덮어쓴다
     secret: ${APP_JWT_SECRET:local-development-only-secret-key-change-me-please}

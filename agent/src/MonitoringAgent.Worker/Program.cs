@@ -4,6 +4,12 @@ using MonitoringAgent.Worker;
 using MonitoringAgent.Worker.Services;
 using Serilog;
 
+// Synthetic demonstration is explicitly selected; it never opens real log files or installs a service.
+if (args.Contains("--demo", StringComparer.OrdinalIgnoreCase))
+{
+    return await DemoRunner.RunAsync(args);
+}
+
 var exeDir = AppContext.BaseDirectory;
 Directory.SetCurrentDirectory(exeDir);
 

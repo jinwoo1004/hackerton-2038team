@@ -87,7 +87,7 @@ export default function LoginPage() {
             <div className="mt-5 rounded-xl border border-dashed border-line bg-ink-100/70 px-4 py-3 text-center">
               <p className="text-[12px] font-bold text-ink-600">데모 모드</p>
               <p className="mt-1 text-[12px] leading-relaxed text-ink-500">
-                백엔드 주소가 설정되지 않아 임시 데이터로 동작합니다.
+                브라우저에서 실제 파일을 분석하고 합성 시드로 운영 흐름을 시연합니다.
                 <br />
                 <span className="font-mono text-[11px] text-ink-600">admin@xisnd.com / test1234</span>
               </p>

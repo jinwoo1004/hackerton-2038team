@@ -55,7 +55,7 @@ export interface LogQuery {
 
 export const telemetryApi = {
   logs(projectId: number, query: LogQuery = {}): Promise<LogEntry[]> {
-    if (USE_MOCK) return mockApi.logEntries();
+    if (USE_MOCK) return mockApi.logEntries(projectId, query);
     const q = new URLSearchParams();
     if (query.agentId) q.set("agentId", String(query.agentId));
     if (query.level && query.level !== "ALL") q.set("level", query.level);
@@ -66,7 +66,7 @@ export const telemetryApi = {
   },
 
   metrics(projectId: number, minutes = 60, agentId?: number): Promise<MetricSeriesResponse> {
-    if (USE_MOCK) return mockApi.metrics(minutes);
+    if (USE_MOCK) return mockApi.metrics(projectId, minutes, agentId);
     const q = new URLSearchParams({ minutes: String(minutes) });
     if (agentId) q.set("agentId", String(agentId));
     return request<MetricSeriesResponse>(`/api/projects/${projectId}/metrics?${q.toString()}`);

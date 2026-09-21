@@ -1,0 +1,29 @@
+{
+  "frontend": "http://localhost:13200/login",
+  "backendHealth": "UP",
+  "serviceHealth": "UP",
+  "systemStatuses": [
+    "api:UP",
+    "db:UP",
+    "analysis:UP",
+    "agent:UP"
+  ],
+  "projectId": 1,
+  "agentCount": 1,
+  "agentState": "ONLINE",
+  "agentVersion": "1.0.0-demo",
+  "metricPoints": 60,
+  "logEntries": 26,
+  "analysisStatus": "COMPLETED",
+  "score": 69,
+  "findings": 9,
+  "projectCount": 1,
+  "health": {
+    "total": 1,
+    "normal": 1,
+    "warning": 0,
+    "critical": 0,
+    "openIncidents": 0
+  },
+  "verifiedAt": "2026-09-21T18:38:30.9399704+09:00"
+}

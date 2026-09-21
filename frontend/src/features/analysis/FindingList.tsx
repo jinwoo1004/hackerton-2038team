@@ -102,6 +102,7 @@ export function FindingList({
                 </button>
                 {expanded && (
                   <div className="animate-fade-in space-y-2.5 px-5 pb-4 pl-[4.25rem]">
+                    {(f.ruleSource || f.ruleText) && <blockquote className="rounded-lg border-l-2 border-primary-500 bg-primary-50 px-3 py-2 text-[12px] leading-relaxed text-ink-700"><p className="font-bold text-primary-700">규칙 출처: {f.ruleSource ?? "업로드 문서"}</p><p className="mt-1">{f.ruleText}</p></blockquote>}
                     {f.snippet && (
                       <pre className="overflow-x-auto rounded-lg bg-ink-900 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-100">
                         <code>{f.snippet}</code>

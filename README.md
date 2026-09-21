@@ -13,6 +13,21 @@ React (Next.js)  →  Spring Boot API  →  Python 분석 서비스
 호출 방향은 항상 위 순서다. **프런트엔드와 에이전트는 Python 서비스를 직접 호출하지 않는다.**
 Spring Boot 가 전체 오케스트레이터 역할을 한다.
 
+## 해커톤 원클릭 실행
+
+Windows에서 Node.js, JDK 17, .NET 8 SDK를 준비하고 OUT 루트에서 실행한다. Python 3.11과 프로젝트 의존성은 준비 단계에서 설치한다.
+
+```powershell
+.\demo.ps1 -Action Prepare    # 온라인 사전 준비와 production build
+.\demo.ps1 -Offline           # 전체 스택과 합성 Agent 실행
+.\demo-stop.ps1              # 이 작업에서 기동한 프로세스만 중지
+.\demo-reset.ps1             # 시연 DB/업로드 초기화, 빌드는 유지
+```
+
+로그인: `http://localhost:3200/login`, `admin@xisnd.com` / `test1234`. 처음부터 `demo.ps1`만 실행하면 준비 후 시작한다. `-Mode Frontend -Offline`은 백엔드 없는 백업이다. 기본 포트가 사용 중이면 `-FrontendPort 13200 -BackendPort 18080 -ServicePort 18000`을 Prepare/Start 양쪽에 지정한다.
+
+OpenAI 키는 실행 환경에만 `$env:OPENAI_API_KEY = '<로컬 키>'`로 설정한다. 키가 없거나 연결이 실패하면 규칙 추출과 incident 설명을 로컬에서 생성한다. 실제 키를 파일이나 Git에 넣지 않는다. [5분 대본·클릭 순서·복구 방법](DEMO.md), [추가 API](backend/DEMO-API.md), [구현 기준](docs/IMPLEMENTATION.md), [독립 검증 결과와 미검증 항목](docs/VERIFICATION.md)을 참고한다.
+
 ---
 
 ## 구성
@@ -52,6 +67,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 
 ```bash
 cd backend
+cp src/main/resources/application-local.example.yml src/main/resources/application-local.yml
 ./gradlew bootRun          # http://localhost:8080 (기본 local 프로파일 = H2)
 ```
 
@@ -119,12 +135,15 @@ uvicorn app.main:app --reload --port 8000                 # service 폴더에서
 - 실시간 수집 로그 화면, 서버별 CPU·메모리·디스크 추이 차트
 - 이상 탐지: 연결 끊김, CPU·메모리·디스크 임계치, 오류 로그 급증, 치명 로그, 처음 보는 오류, 평소 추세 대비 급증(Python)
 - Slack 알림: 채널·규칙(대상 프로젝트, 심각도, 유형, 해결 알림, 조용한 시간), 테스트 발송, 발송 기록, 중복 억제
+- MD/PDF/XLSX/DOCX 본문·표 추출, 규칙 인용과 코드 위치 연결, 금지·길이·이름 검사
+- OpenAI 규칙 추출·사건 설명과 로컬 폴백, 안전 장애 트리거·복구, 동일한 브라우저 단독 시연
+- ONLINE 합성 Agent 시계열·로그, 사건과 일치하는 대시보드 집계 및 Slack 미리보기
 
 아직 구현하지 않음 (다음 단계):
 
 - Naver Works / SMS / Redmine 알림 채널
-- LLM 요약 (백엔드 `IncidentInsight` 구현만 추가하면 알림에 붙는다)
 - Syslog / MQTT / Kafka 입력, Linux 에이전트
+- 예측(Prediction), SSO, GIS
 
 ---
 
@@ -140,5 +159,5 @@ uvicorn app.main:app --reload --port 8000                 # service 폴더에서
 | 저장소를 S3 로 교체 | `backend/.../file/FileStorageService.java` |
 | 이상 탐지 규칙·기준값 | `backend/.../incident/IncidentDetector.java`, `app.detection.*` |
 | 알림 채널 추가 | `backend/.../alert/AlertDispatcher.java` (Slack 은 `SlackNotifier`) |
-| LLM 요약 붙이기 | `backend/.../alert/IncidentInsight.java` 구현 빈 등록 |
+| LLM 설명·로컬 폴백 | `backend/.../alert/IncidentInsight.java`, `backend/.../llm/` |
 | 에이전트 수집 로직 | `agent/src/MonitoringAgent.Worker/Services/CollectorScheduler.cs` |

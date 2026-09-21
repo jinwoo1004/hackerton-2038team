@@ -6,7 +6,7 @@ from typing import Dict, Optional
 from uuid import uuid4
 
 from app.analysis.logs import analyze_logs
-from app.analysis.project_rules import parse_rule_documents
+from app.analysis.project_rules import parse_rule_documents, apply_extracted_rules
 from app.analysis.rules import CATEGORY_LABELS, CRITICAL, INFO, WARNING
 from app.analysis.source import FindingCollector, scan_source
 from app.analysis.summary import build_summary, grade_of
@@ -55,6 +55,7 @@ class AnalysisEngine:
 
         names = {_resolve(k): v for k, v in request.fileNames.items()}
         rules = parse_rule_documents([_resolve(p) for p in request.ruleFiles if p], names)
+        apply_extracted_rules(rules, request.extractedRules, request.ruleExtractionSource)
         for doc in rules.documents:
             if not doc["parsed"]:
                 notes.append(f"규칙 문서 {doc['name']}: {doc['note']}")
@@ -81,6 +82,11 @@ class AnalysisEngine:
         warning = findings.severity[WARNING]
         info = findings.severity[INFO]
         score = _score(critical, warning, info, source.get("codeLines", 0))
+        if not source.get("codeLines") and not logs.get("lines"):
+            score = 0
+            notes.append("검사 가능한 코드·로그가 없어 품질 점수를 산정하지 못했습니다 (0점, 미측정).")
+        elif not sum((critical, warning, info)):
+            notes.append(f"{source.get('analyzedFiles', 0)}개 파일, {source.get('codeLines', 0)}개 코드 줄에 기본 정적 규칙과 문서 규칙을 적용했으며 일치한 위반이 없습니다. 런타임 안전성을 보장하지 않습니다.")
 
         categories = []
         for key, label in CATEGORY_LABELS.items():
@@ -115,7 +121,7 @@ class AnalysisEngine:
             result = self.analyze(request)
             response = AnalysisResponse(
                 analysisId=analysis_id,
-                status=AnalysisStatus.COMPLETED,
+                status=AnalysisStatus.COMPLETED if result["source"].get("codeLines") or result["logs"].get("lines") else AnalysisStatus.FAILED,
                 projectCode=request.projectCode,
                 summary=build_summary(request.projectCode, result),
                 result=result,

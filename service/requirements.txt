@@ -3,3 +3,6 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.2
 pydantic-settings==2.6.1
 python-multipart==0.0.17
+pypdf==5.1.0
+openpyxl==3.1.5
+python-docx==1.1.2

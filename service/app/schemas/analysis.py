@@ -21,6 +21,8 @@ class AnalysisRequest(BaseModel):
     sourceFile: Optional[str] = Field(None, description="소스 ZIP 경로")
     logFiles: List[str] = Field(default_factory=list, description="로그 파일 경로 목록")
     fileNames: Dict[str, str] = Field(default_factory=dict, description="경로별 원래 파일명")
+    extractedRules: List[Dict[str, Any]] = Field(default_factory=list)
+    ruleExtractionSource: str = "LOCAL"
 
 
 class AnalysisResponse(BaseModel):

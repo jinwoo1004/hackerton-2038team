@@ -1,0 +1,27 @@
+{
+  "verifier": "independent session-monitor",
+  "date": "2026-09-21 Asia/Seoul",
+  "tests": [
+    {"command": "backend/gradlew.bat test --rerun-tasks --console=plain", "result": "PASS", "tests": 14, "failures": 0, "notes": "Independent rerun, Gradle BUILD SUCCESSFUL in 34s; XML suite counts 2+2+4+2+1+1+2."},
+    {"command": ".tools/python311/python.exe -m pytest service/tests -q", "result": "PASS", "tests": 16, "failures": 0, "notes": "0.79s; one third-party anyio deprecation warning."},
+    {"command": "frontend: npm.cmd test", "result": "PASS", "tests": 10, "failures": 0, "notes": "Final rerun includes independent-finding longest-file line parity fix; 340.7ms. Initial restricted Windows userInfo ENOMEM; elevated rerun passed."},
+    {"command": "frontend: npm.cmd run type-check", "result": "PASS", "exitCode": 0},
+    {"command": "frontend: NEXT_BUILD_DIR=.next-demo-full NEXT_PUBLIC_API_BASE_URL=http://localhost:18080 npm.cmd run build", "result": "PASS", "routesGenerated": "19/19", "buildTimeKst": "18:31:21"},
+    {"command": "frontend: NEXT_BUILD_DIR=.next-demo-frontend (API URL unset) npm.cmd run build", "result": "PASS", "routesGenerated": "19/19", "buildTimeKst": "18:31:39"},
+    {"command": "dotnet test agent/tests/MonitoringAgent.Tests/MonitoringAgent.Tests.csproj --no-restore --configuration Release", "result": "PASS", "tests": 27, "failures": 0},
+    {"command": "dotnet build agent/MonitoringAgent.sln -c Release --no-restore", "result": "PASS", "warnings": 0, "errors": 0, "notes": "Worker, WPF App and Tests built."},
+    {"command": "java --class-path backend/build/classes/java/main;<cached Jackson and Spring jars> scripts/verification/LlmBoundaryVerification.java", "result": "PASS", "checks": [{"case":"HTTP 503", "elapsedMs":101}, {"case":"malformed JSON", "elapsedMs":8}, {"case":"1s timeout", "elapsedMs":1001}], "notes":"Independent loopback HTTP server, synthetic placeholder credential, production OpenAiClient returns empty for caller LOCAL fallback. No live OpenAI request."}
+  ],
+  "runtime": {
+    "command": ".\\scripts\\runtime\\test-runtime.ps1 -Lifecycle -FrontendPort 13200 -BackendPort 18080 -ServicePort 18000",
+    "result": "PASS",
+    "checks": ["3200 collision rejected and existing owner retained", "8080 collision rejected and existing owner retained", "8000 collision rejected and existing owner retained", "outside-workspace reset path rejected", "owned orphan recovered after terminating test supervisor", "reused PID rejected by creation time", "clean alternate-port full start and duplicate start preserve PIDs", "stop releases all three alternate ports", "frontend-only offline start and reset removes demo DB"]
+  },
+  "protectedDocument": {
+    "input": "user-supplied original 단지서버_월패드_연동_규격.docx",
+    "command": "app.parser.documents.extract_text(original_docx)",
+    "hasText": false,
+    "error": "암호화·DRM 또는 구형 OLE 문서입니다. 보호되지 않은 DOCX/XLSX 사본이 필요합니다",
+    "classification": "Parser rejects unsupported protected input explicitly: PASS. Original document content and requirements reflected: UNVERIFIED."
+  }
+}

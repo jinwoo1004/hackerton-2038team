@@ -12,9 +12,9 @@ FORBID_WORDS = re.compile(r"(금지|사용하지|쓰지\s*말|사용\s*불가|�
 BACKTICK = re.compile(r"`([^`]{2,60})`")
 CODE_TOKEN = re.compile(r"[A-Za-z_][\w$]*(?:\.[A-Za-z_][\w$]*)+(?:\(\))?|[A-Za-z_]\w*\(\)|@[A-Z]\w+")
 
-FUNCTION_LIMIT = re.compile(r"(메서드|메소드|함수|method|function)[^\d\n]{0,15}(\d{1,4})\s*(줄|라인|lines?)", re.IGNORECASE)
-FILE_LIMIT = re.compile(r"(파일|클래스|file|class)[^\d\n]{0,15}(\d{2,5})\s*(줄|라인|lines?)", re.IGNORECASE)
-LINE_LIMIT = re.compile(r"(한\s*줄|라인\s*길이|줄\s*길이|line\s*length|column)[^\d\n]{0,15}(\d{2,4})\s*(자|글자|characters?|chars?|columns?)?", re.IGNORECASE)
+FUNCTION_LIMIT = re.compile(r"(메서드|메소드|함수|method|function)[^\d\n]{0,60}(\d{1,4})\s*(줄|라인|lines?)", re.IGNORECASE)
+FILE_LIMIT = re.compile(r"(파일|클래스|file|class)[^\d\n]{0,60}(\d{1,5})\s*(줄|라인|lines?)", re.IGNORECASE)
+LINE_LIMIT = re.compile(r"(한\s*줄|라인\s*길이|줄\s*길이|line\s*length|column)[^\d\n]{0,60}(\d{2,4})\s*(자|글자|characters?|chars?|columns?)?", re.IGNORECASE)
 
 
 @dataclass
@@ -25,6 +25,8 @@ class ProjectRules:
     function_lines: int = DEFAULT_FUNCTION_LINES
     line_length: int = DEFAULT_LINE_LENGTH
     custom_limits: list = field(default_factory=list)
+    naming: list = field(default_factory=list)
+    extraction_source: str = "LOCAL"
 
     def to_dict(self) -> dict:
         return {
@@ -36,6 +38,8 @@ class ProjectRules:
                 "lineLength": self.line_length,
             },
             "customLimits": self.custom_limits,
+            "naming": self.naming,
+            "extractionSource": self.extraction_source,
         }
 
 
@@ -52,12 +56,16 @@ def parse_rule_documents(paths: list[str], names: dict[str, str] | None = None) 
     for path in paths:
         name = (names or {}).get(path) or Path(path).name
         text, reason = extract_text(path)
-        doc = {"name": name, "parsed": text is not None, "ruleCount": 0, "note": reason}
+        doc = {"name": name, "parsed": text is not None, "ruleCount": 0, "note": reason, "excerpt": (text or "")[:500]}
         if text:
             for raw in text.splitlines():
                 line = raw.strip(" -*\t•")
                 if not line:
                     continue
+                if re.search(r"(함수|메서드|메소드|function|method)", line, re.I) and re.search(r"camelCase|snake_case|PascalCase", line):
+                    convention = re.search(r"camelCase|snake_case|PascalCase", line).group()
+                    rules.naming.append({"value": convention, "source": name, "text": line[:300]})
+                    doc["ruleCount"] += 1
                 if FORBID_WORDS.search(line):
                     for token in _tokens(line):
                         if token.lower() in seen:
@@ -79,3 +87,23 @@ def parse_rule_documents(paths: list[str], names: dict[str, str] | None = None) 
                     doc["ruleCount"] += 1
         rules.documents.append(doc)
     return rules
+
+
+def apply_extracted_rules(rules: ProjectRules, extracted: list[dict], source: str) -> None:
+    """Only a small declarative rule vocabulary is accepted; never execute generated code."""
+    for item in extracted[:100]:
+        kind, value = item.get("type"), item.get("value")
+        name, quote = item.get("source", ""), item.get("text", "")
+        if not name or not quote:
+            continue
+        rule = {"source": name, "text": quote[:500]}
+        if kind == "forbidden" and isinstance(value, str) and 2 <= len(value) <= 80:
+            rule["token"] = value.rstrip("()")
+            if not any(f["token"] == rule["token"] for f in rules.forbidden):
+                rules.forbidden.append(rule)
+        elif kind in ("functionLines", "fileLines", "lineLength") and str(value).isdigit() and 1 <= int(value) <= 10000:
+            setattr(rules, {"functionLines": "function_lines", "fileLines": "file_lines", "lineLength": "line_length"}[kind], int(value))
+            rules.custom_limits.append({**rule, "type": kind, "value": int(value)})
+        elif kind == "naming" and value in ("camelCase", "snake_case", "PascalCase"):
+            rules.naming.append({**rule, "value": value})
+    rules.extraction_source = source

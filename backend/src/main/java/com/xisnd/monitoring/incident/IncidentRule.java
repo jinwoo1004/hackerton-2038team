@@ -1,6 +1,7 @@
 package com.xisnd.monitoring.incident;
 
 public enum IncidentRule {
+    LATENCY("응답 지연"),
     AGENT_DOWN("에이전트 연결 끊김"),
     CPU_HIGH("CPU 사용률 높음"),
     MEMORY_HIGH("메모리 사용률 높음"),

@@ -43,10 +43,9 @@ public class SlackNotifier {
         } catch (ApiException e) {
             return Optional.of(e.getMessage());
         } catch (HttpStatusCodeException e) {
-            String body = e.getResponseBodyAsString();
-            return Optional.of("Slack 응답 " + e.getStatusCode().value() + (body.isBlank() ? "" : " " + body));
+            return Optional.of("Slack 응답 " + e.getStatusCode().value());
         } catch (RestClientException e) {
-            return Optional.of("Slack 연결 실패: " + e.getMessage());
+            return Optional.of("Slack 연결 실패 (" + e.getClass().getSimpleName() + ")");
         }
     }
 

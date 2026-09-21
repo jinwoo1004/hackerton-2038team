@@ -19,6 +19,9 @@ import {
 import { EventList } from "@/features/dashboard/EventList";
 import { ScoreTrendChart, type ScorePoint } from "@/features/dashboard/ScoreTrendChart";
 import { ProjectMenu } from "@/features/project/ProjectMenu";
+import { DemoControl } from "@/features/monitoring/DemoControl";
+import { LiveHealthSummary } from "@/features/monitoring/LiveHealthSummary";
+import { DATA_CHANGED } from "@/services/demoApi";
 import { dashboardApi, eventApi } from "@/services/dashboardApi";
 import { projectApi } from "@/services/projectApi";
 import { cn } from "@/shared/lib/cn";
@@ -51,8 +54,8 @@ export default function OverviewPage() {
   const [events, setEvents] = useState<EventSummary | null>(null);
   const [error, setError] = useState("");
 
-  const load = useCallback(() => {
-    setState("loading");
+  const load = useCallback((silent = false) => {
+    if (!silent) setState("loading");
     Promise.all([
       dashboardApi.dashboard(),
       dashboardApi.analyses(300).catch(() => [] as AnalysisListItem[]),
@@ -72,7 +75,13 @@ export default function OverviewPage() {
       });
   }, []);
 
-  useEffect(load, [load]);
+  useEffect(() => {
+    load();
+    const refresh = () => load(true);
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener(DATA_CHANGED, refresh); window.addEventListener("storage", refresh);
+    return () => { clearInterval(timer); window.removeEventListener(DATA_CHANGED, refresh); window.removeEventListener("storage", refresh); };
+  }, [load]);
 
   if (state === "loading") {
     return (
@@ -93,6 +102,8 @@ export default function OverviewPage() {
   return (
     <div className="space-y-5">
       <Hero data={data} />
+      <DemoControl />
+      <LiveHealthSummary />
       {data.projects.total === 0 ? (
         <EmptyState
           tone="hero"
@@ -216,8 +227,8 @@ function OperationSummary({ data }: { data: Dashboard }) {
   return (
     <Card className="p-5 sm:p-6">
       <CardTitle
-        title="운영 요약"
-        description="프로젝트의 현재 운영 상태와 진행 현황을 한눈에 확인하세요."
+        title="프로젝트 분석 현황"
+        description="등록·분석 진행 상태입니다. 현재 이상 여부는 위 실시간 프로젝트 상태에서 확인하세요."
         action={
           <span className="text-[13px] text-ink-500">
             전체 프로젝트 <span className="ml-1 text-[15px] font-extrabold tabular-nums text-ink-900">{total}개</span>
@@ -232,7 +243,7 @@ function OperationSummary({ data }: { data: Dashboard }) {
             {STATUS_META.ACTIVE.label}
           </p>
           <p className="mt-2 text-[32px] font-extrabold leading-none tracking-tight tabular-nums text-ink-900">{counts.ACTIVE}개</p>
-          <p className="mt-2 text-[12.5px] text-ink-500 [word-break:keep-all]">전체의 {pct(counts.ACTIVE)}%가 정상 운영 중입니다.</p>
+          <p className="mt-2 text-[12.5px] text-ink-500 [word-break:keep-all]">전체의 {pct(counts.ACTIVE)}%가 분석을 마쳤습니다.</p>
         </div>
         {(["ANALYZING", "READY", "ERROR"] as const).map((s) => (
           <div key={s} className="flex flex-col justify-center px-4 sm:border-l sm:border-line">
@@ -428,7 +439,7 @@ function AttentionCard({ data, events }: { data: Dashboard; events: EventSummary
           </span>
           <div className="min-w-0">
             <p className="text-[14px] font-bold text-ink-900">확인할 주요 이슈가 없습니다.</p>
-            <p className="mt-0.5 text-[12.5px] text-ink-500">모든 프로젝트가 정상적으로 운영되고 있습니다.</p>
+            <p className="mt-0.5 text-[12.5px] text-ink-500">최근 정적 분석에 심각 항목이 없습니다. 운영 이상은 실시간 상태에서 확인하세요.</p>
           </div>
         </div>
       ) : (

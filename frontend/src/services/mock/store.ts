@@ -11,11 +11,13 @@ import type {
   AnalysisListItem,
   AuthResponse,
   Dashboard,
+  DemoSeed,
   EventLevel,
   EventPage,
   EventSummary,
   EventType,
   Incident,
+  IncidentStatus,
   LogEntry,
   LoginRequest,
   MetricSeriesResponse,
@@ -31,6 +33,10 @@ import type {
   SignupRequest,
   User,
 } from "@/types";
+import { analyzeUploads } from "./analyzer";
+import { parseUpload, readParsedFile, saveParsedFile, deleteParsedFiles, type ParsedUpload } from "./documentParser";
+import { DEMO_CODE, localInsight, seededMetrics, slackMessage, type DemoScenario } from "./demoData";
+import type { LogQuery } from "../agentApi";
 
 const KEY = "mp.mockdb";
 
@@ -49,6 +55,9 @@ interface MockDb {
   alertChannels?: (AlertChannel & { url: string })[];
   alertRules?: AlertRule[];
   deliveries?: AlertDelivery[];
+  incidents?: Incident[];
+  logs?: LogEntry[];
+  demoAnchors?: Record<number, string>;
 }
 
 function emptyDb(): MockDb {
@@ -81,7 +90,20 @@ function read(): MockDb {
     return db;
   }
   try {
-    return JSON.parse(raw) as MockDb;
+    const db = JSON.parse(raw) as MockDb;
+    let changed = false;
+    for (const analysis of db.analyses) {
+      if (analysis.status === "COMPLETED" && !analysis.result?.source.available && !analysis.result?.logs.available) {
+        analysis.status = "FAILED";
+        analysis.score = null;
+        analysis.grade = null;
+        analysis.result = null;
+        analysis.summary = "이전 목 분석에는 실제 입력 근거가 없습니다. 파일을 다시 올린 뒤 분석해주세요.";
+        changed = true;
+      }
+    }
+    if (changed) window.localStorage.setItem(KEY, JSON.stringify(db));
+    return db;
   } catch {
     const db = emptyDb();
     window.localStorage.setItem(KEY, JSON.stringify(db));
@@ -92,6 +114,22 @@ function read(): MockDb {
 function write(db: MockDb) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(db));
+}
+
+function currentUserId(): number {
+  return typeof window === "undefined" ? 1 : Number((window.localStorage.getItem("mp.token") ?? "mock-1").replace("mock-", ""));
+}
+function ownedProjects(db: MockDb): Project[] {
+  return db.projects.filter((p) => (p.createdBy ?? 1) === currentUserId());
+}
+function ownedProject(db: MockDb, id: number): Project {
+  const project = ownedProjects(db).find((p) => p.id === id);
+  if (!project) throw new Error("프로젝트를 찾을 수 없습니다.");
+  return project;
+}
+function ownedEvents(db: MockDb): ActivityEvent[] {
+  const ids = new Set(ownedProjects(db).map((p) => p.id));
+  return (db.events ?? []).filter((e) => !!e.projectId && ids.has(e.projectId));
 }
 
 function nextId(db: MockDb): number {
@@ -120,7 +158,7 @@ function userOf(db: MockDb, token: string): MockUser {
   return user;
 }
 
-// 목 모드는 실제 분석을 못 해서 몇 초 뒤 완료로 바꾼다
+// Parsing runs locally; a short queued state preserves the same asynchronous UI flow.
 type EventFilter = { projectId?: number; days?: number; q?: string };
 
 function filterEvents(events: ActivityEvent[], f: EventFilter): ActivityEvent[] {
@@ -141,27 +179,27 @@ function settleAnalyses(db: MockDb): MockDb {
     if ((a.status !== "QUEUED" && a.status !== "ANALYZING") || now - Date.parse(a.createdAt) < 3000) continue;
     a.status = "COMPLETED";
     a.completedAt = new Date().toISOString();
-    a.summary = "데모 모드에서는 실제 분석이 실행되지 않습니다.\n백엔드와 분석 서비스를 연결하면 소스와 로그를 분석한 결과가 표시됩니다.";
-    a.score = 100;
-    a.grade = "A";
-    a.criticalCount = 0;
-    a.warningCount = 0;
-    a.infoCount = 0;
-    a.result = {
-      overview: { score: 100, grade: "A", critical: 0, warning: 0, info: 0 },
-      source: { available: false },
-      categories: [],
-      findings: [],
-      rules: { documents: [], forbidden: [], limits: { fileLines: 1000, functionLines: 100, lineLength: 160 }, customLimits: [] },
-      logs: { available: false },
-      notes: ["데모 모드 결과입니다. NEXT_PUBLIC_API_BASE_URL 을 설정하면 실제 분석 결과를 볼 수 있습니다."],
-    };
+    if (!a.result) {
+      a.status = "FAILED";
+      a.summary = "이전 버전의 분석에는 실제 입력 근거가 없습니다. 파일을 다시 올린 뒤 분석해주세요.";
+      a.score = null;
+      a.grade = null;
+      changed = true;
+      continue;
+    }
+    const result = a.result.overview;
+    a.score = result.score;
+    a.grade = result.grade;
+    a.criticalCount = result.critical;
+    a.warningCount = result.warning;
+    a.infoCount = result.info;
+    a.summary = `실제 입력 분석: ${result.score}점 (${result.grade}) · 심각 ${result.critical}건 · 주의 ${result.warning}건 · 참고 ${result.info}건\n${a.result.notes[0]}`;
     const p = db.projects.find((x) => x.id === a.projectId);
     if (p) {
       p.status = "ACTIVE";
       p.lastAnalyzedAt = a.completedAt;
     }
-    pushEvent(db, p, "ANALYSIS_COMPLETED", "INFO", "분석이 완료되었습니다", "데모 모드 결과");
+    pushEvent(db, p, "ANALYSIS_COMPLETED", "INFO", "분석이 완료되었습니다", `${result.score}점 · 실제 파일 및 규칙 기반`);
     changed = true;
   }
   if (changed) write(db);
@@ -216,7 +254,7 @@ export const mockApi = {
 
   async listProjects(): Promise<Project[]> {
     const db = read();
-    const withCounts = db.projects.map((p) => ({
+    const withCounts = ownedProjects(db).map((p) => ({
       ...p,
       fileCount: db.files.filter((f) => f.projectId === p.id).length,
     }));
@@ -225,8 +263,7 @@ export const mockApi = {
 
   async getProject(id: number): Promise<Project> {
     const db = read();
-    const project = db.projects.find((p) => p.id === id);
-    if (!project) throw new Error("프로젝트를 찾을 수 없습니다.");
+    const project = ownedProject(db, id);
     return delay({ ...project, fileCount: db.files.filter((f) => f.projectId === id).length });
   },
 
@@ -247,6 +284,7 @@ export const mockApi = {
       fileCount: 0,
       lastAnalyzedAt: null,
       recentEventCount: 0,
+      createdBy: currentUserId(),
       createdAt: now,
       updatedAt: now,
     };
@@ -258,21 +296,24 @@ export const mockApi = {
 
   async updateProject(id: number, body: ProjectUpdateRequest): Promise<Project> {
     const db = read();
+    ownedProject(db, id);
     const idx = db.projects.findIndex((p) => p.id === id);
     if (idx < 0) throw new Error("프로젝트를 찾을 수 없습니다.");
-    db.projects[idx] = { ...db.projects[idx], ...body, updatedAt: new Date().toISOString() };
+    db.projects[idx] = { ...db.projects[idx], ...body, projectCode: db.projects[idx].projectCode, createdBy: db.projects[idx].createdBy, updatedAt: new Date().toISOString() };
     write(db);
     return delay(db.projects[idx]);
   },
 
   async deleteProject(id: number): Promise<void> {
     const db = read();
+    ownedProject(db, id);
     pushEvent(db, db.projects.find((p) => p.id === id), "PROJECT_DELETED", "WARNING", "프로젝트를 삭제했습니다");
     db.projects = db.projects.filter((p) => p.id !== id);
     db.agents = (db.agents ?? []).filter((a) => a.projectId !== id);
     db.alertRules = (db.alertRules ?? []).filter((r) => r.projectId !== id);
     db.files = db.files.filter((f) => f.projectId !== id);
     db.analyses = db.analyses.filter((a) => a.projectId !== id);
+    db.incidents = (db.incidents ?? []).filter((a) => a.projectId !== id);
     write(db);
     return delay(undefined);
   },
@@ -284,11 +325,15 @@ export const mockApi = {
 
   async listFiles(projectId: number): Promise<ProjectFile[]> {
     const db = read();
+    ownedProject(db, projectId);
     return delay(db.files.filter((f) => f.projectId === projectId));
   },
 
   async addFile(projectId: number, file: File, fileType: ProjectFileType): Promise<ProjectFile> {
+    ownedProject(read(), projectId);
+    const parsed = await parseUpload(file, fileType);
     const db = read();
+    ownedProject(db, projectId);
     const saved: ProjectFile = {
       id: nextId(db),
       projectId,
@@ -300,6 +345,7 @@ export const mockApi = {
       createdAt: new Date().toISOString(),
     };
     db.files.push(saved);
+    await saveParsedFile(saved.id, parsed);
     pushEvent(db, db.projects.find((p) => p.id === projectId), "FILE_UPLOADED", "INFO", "파일을 올렸습니다", file.name);
     write(db);
     return delay(saved, 200);
@@ -309,6 +355,7 @@ export const mockApi = {
     const db = read();
     const target = db.files.find((f) => f.id === fileId);
     if (target) {
+      ownedProject(db, target.projectId);
       pushEvent(db, db.projects.find((p) => p.id === target.projectId), "FILE_DELETED", "INFO", "파일을 삭제했습니다", target.originalFilename);
     }
     db.files = db.files.filter((f) => f.id !== fileId);
@@ -317,7 +364,14 @@ export const mockApi = {
   },
 
   async startAnalysis(projectId: number): Promise<Analysis> {
+    const before = read();
+    ownedProject(before, projectId);
+    const projectFiles = before.files.filter((f) => f.projectId === projectId);
+    const parsed = await Promise.all(projectFiles.map((f) => readParsedFile(f.id)));
+    if (parsed.some((p) => !p)) throw new Error("일부 파일의 실제 내용이 저장되어 있지 않습니다. 해당 파일을 다시 업로드해주세요.");
+    const result = analyzeUploads(parsed.filter((p): p is ParsedUpload => !!p));
     const db = read();
+    ownedProject(db, projectId);
     const now = new Date().toISOString();
     const analysis: Analysis = {
       id: nextId(db),
@@ -327,6 +381,7 @@ export const mockApi = {
       completedAt: null,
       summary: null,
       createdAt: now,
+      result,
     };
     db.analyses.push(analysis);
     const p = db.projects.find((x) => x.id === projectId);
@@ -341,12 +396,14 @@ export const mockApi = {
 
   async latestAnalysis(projectId: number): Promise<Analysis | null> {
     const db = settleAnalyses(read());
+    ownedProject(db, projectId);
     const list = db.analyses.filter((a) => a.projectId === projectId);
     return delay(list.length ? list[list.length - 1] : null, 200);
   },
 
   async analysis(projectId: number, analysisId: number): Promise<Analysis> {
     const db = settleAnalyses(read());
+    ownedProject(db, projectId);
     const found = db.analyses.find((a) => a.id === analysisId && a.projectId === projectId);
     if (!found) throw new Error("분석을 찾을 수 없습니다.");
     return delay(found, 200);
@@ -354,6 +411,7 @@ export const mockApi = {
 
   async analysisHistory(projectId: number): Promise<Analysis[]> {
     const db = settleAnalyses(read());
+    ownedProject(db, projectId);
     return delay(db.analyses.filter((a) => a.projectId === projectId).reverse());
   },
 
@@ -361,6 +419,7 @@ export const mockApi = {
     const db = settleAnalyses(read());
     const items = db.analyses
       .slice()
+      .filter((a) => ownedProjects(db).some((p) => p.id === a.projectId))
       .reverse()
       .map((a) => {
         const p = db.projects.find((x) => x.id === a.projectId);
@@ -385,7 +444,10 @@ export const mockApi = {
   },
 
   async dashboard(): Promise<Dashboard> {
-    const db = settleAnalyses(read());
+    const all = settleAnalyses(read());
+    const projects = ownedProjects(all);
+    const ids = new Set(projects.map((p) => p.id));
+    const db = { ...all, projects, analyses: all.analyses.filter((a) => ids.has(a.projectId)), files: all.files.filter((f) => ids.has(f.projectId)) };
     const count = (s: Project["status"]) => db.projects.filter((p) => p.status === s).length;
     const health = db.projects.map((p) => {
       const list = db.analyses.filter((a) => a.projectId === p.id);
@@ -422,7 +484,7 @@ export const mockApi = {
         info: scored.reduce((s, h) => s + (h.info ?? 0), 0),
       },
       projectHealth: health,
-      recentEvents: (db.events ?? []).slice(0, 8),
+      recentEvents: ownedEvents(db).slice(0, 8),
     });
   },
 
@@ -431,12 +493,12 @@ export const mockApi = {
       services: [
         { key: "api", name: "백엔드 API", status: "MOCK", detail: "브라우저 데모 모드", latencyMs: null },
         { key: "db", name: "데이터베이스", status: "MOCK", detail: "로컬스토리지", latencyMs: null },
-        { key: "analysis", name: "분석 서비스", status: "DISABLED", detail: "데모 모드에서는 연결하지 않습니다", latencyMs: null },
+        { key: "analysis", name: "분석 서비스", status: "MOCK", detail: "브라우저에서 실제 파일·규칙 분석", latencyMs: null },
         {
           key: "agent",
           name: "수집 에이전트",
-          status: "NOT_CONNECTED",
-          detail: (read().agents ?? []).length ? "데모 모드에서는 에이전트가 연결되지 않습니다" : "등록된 에이전트가 없습니다",
+          status: "MOCK",
+          detail: "합성 시드 기반 에이전트 시계열·로그",
           latencyMs: null,
         },
       ],
@@ -448,7 +510,7 @@ export const mockApi = {
     const db = settleAnalyses(read());
     const size = params.size ?? 30;
     const page = params.page ?? 0;
-    const all = filterEvents(db.events ?? [], params).filter((e) => !params.level || e.level === params.level);
+    const all = filterEvents(ownedEvents(db), params).filter((e) => !params.level || e.level === params.level);
     if (params.sort === "asc") all.reverse();
     return delay({
       items: all.slice(page * size, (page + 1) * size),
@@ -461,8 +523,8 @@ export const mockApi = {
 
   async eventSummary(params: EventFilter): Promise<EventSummary> {
     const db = read();
-    const list = filterEvents(db.events ?? [], params);
-    const scoped = (db.events ?? []).filter((e) => !params.projectId || e.projectId === params.projectId);
+    const list = filterEvents(ownedEvents(db), params);
+    const scoped = ownedEvents(db).filter((e) => !params.projectId || e.projectId === params.projectId);
     const age = (e: ActivityEvent) => Date.now() - Date.parse(e.createdAt);
     const count = (level: EventLevel) => list.filter((e) => e.level === level).length;
     return delay({
@@ -497,11 +559,13 @@ export const mockApi = {
 
   async agents(projectId: number): Promise<Agent[]> {
     const db = read();
+    ownedProject(db, projectId);
     return delay((db.agents ?? []).filter((a) => a.projectId === projectId));
   },
 
   async createAgent(projectId: number, name: string): Promise<AgentCreated> {
     const db = read();
+    ownedProject(db, projectId);
     const token = `agt_demo${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 12)}`;
     const agent: Agent = {
       id: nextId(db),
@@ -519,8 +583,9 @@ export const mockApi = {
 
   async deleteAgent(projectId: number, agentId: number): Promise<void> {
     const db = read();
-    const target = (db.agents ?? []).find((a) => a.id === agentId);
-    db.agents = (db.agents ?? []).filter((a) => a.id !== agentId);
+    ownedProject(db, projectId);
+    const target = (db.agents ?? []).find((a) => a.id === agentId && a.projectId === projectId);
+    db.agents = (db.agents ?? []).filter((a) => a.id !== agentId || a.projectId !== projectId);
     if (target) {
       pushEvent(db, db.projects.find((p) => p.id === projectId), "AGENT_DELETED", "WARNING", "에이전트를 삭제했습니다", target.name);
     }
@@ -528,40 +593,160 @@ export const mockApi = {
     return delay(undefined);
   },
 
-  async logEntries(): Promise<LogEntry[]> {
-    return delay([], 200);
+  async logEntries(projectId: number, query: LogQuery = {}): Promise<LogEntry[]> {
+    const db = read();
+    ownedProject(db, projectId);
+    const ids = new Set((db.agents ?? []).filter((a) => a.projectId === projectId && (!query.agentId || a.id === query.agentId)).map((a) => a.id));
+    return delay((db.logs ?? []).filter((l) => ids.has(l.agentId) && (!query.level || query.level === "ALL" || l.level === query.level || query.level === "WARN" && ["ERROR", "FATAL"].includes(l.level) || query.level === "ERROR" && l.level === "FATAL") && (!query.q || l.message.toLowerCase().includes(query.q.toLowerCase())) && (!query.afterId || l.id > query.afterId)).slice(-(query.limit ?? 200)).reverse(), 80);
   },
 
-  async metrics(minutes: number): Promise<MetricSeriesResponse> {
-    return delay({ minutes, bucketSeconds: 60, series: [] }, 200);
+  async metrics(projectId: number, minutes: number, agentId?: number): Promise<MetricSeriesResponse> {
+    const db = read();
+    ownedProject(db, projectId);
+    const anchor = db.demoAnchors?.[projectId];
+    return delay({ minutes, bucketSeconds: 60, series: anchor ? (db.agents ?? []).filter((a) => a.projectId === projectId && a.state === "ONLINE" && (!agentId || a.id === agentId)).map((a) => ({ agentId: a.id, agentName: a.name, points: seededMetrics(anchor).filter((p) => Date.parse(p.time) >= Date.now() - minutes * 60_000) })) : [] }, 80);
   },
 
   async monitoringOverview(): Promise<MonitoringOverview> {
     const db = read();
-    const agents = db.agents ?? [];
+    const projects = ownedProjects(db);
+    const ids = new Set(projects.map((p) => p.id));
+    const agents = (db.agents ?? []).filter((a) => ids.has(a.projectId));
+    const logs = (db.logs ?? []).filter((l) => agents.some((a) => a.id === l.agentId) && Date.parse(l.loggedAt) > Date.now() - 3600_000);
+    const incidents = (db.incidents ?? []).filter((i) => ids.has(i.projectId) && i.status === "OPEN");
     return delay({
       agentsTotal: agents.length,
-      agentsOnline: 0,
-      errors1h: 0,
-      openIncidents: 0,
-      projects: db.projects.map((p) => ({
+      agentsOnline: agents.filter((a) => a.state === "ONLINE").length,
+      errors1h: logs.filter((l) => l.level === "ERROR" || l.level === "FATAL").length,
+      openIncidents: incidents.length,
+      projects: projects.map((p) => ({
         projectId: p.id,
         name: p.name,
         projectCode: p.projectCode,
         agents: agents.filter((a) => a.projectId === p.id),
-        logs1h: { error: 0, warn: 0, total: 0 },
-        openIncidents: 0,
+        logs1h: { error: logs.filter((l) => agents.some((a) => a.projectId === p.id && a.id === l.agentId) && (l.level === "ERROR" || l.level === "FATAL")).length, warn: logs.filter((l) => agents.some((a) => a.projectId === p.id && a.id === l.agentId) && l.level === "WARN").length, total: logs.filter((l) => agents.some((a) => a.projectId === p.id && a.id === l.agentId)).length },
+        openIncidents: incidents.filter((i) => i.projectId === p.id).length,
       })),
       checkedAt: new Date().toISOString(),
     });
   },
 
-  async incidents(): Promise<Incident[]> {
-    return delay([], 200);
+  async incidents(params: { projectId?: number; status?: IncidentStatus; limit?: number } = {}): Promise<Incident[]> {
+    const db = read();
+    const ids = new Set(ownedProjects(db).map((p) => p.id));
+    return delay((db.incidents ?? []).filter((i) => ids.has(i.projectId) && (!params.projectId || i.projectId === params.projectId) && (!params.status || i.status === params.status)).slice().reverse().slice(0, params.limit ?? 50), 80);
   },
 
-  async resolveIncident(_id: number): Promise<Incident> {
-    throw new Error("데모 모드에는 이상 기록이 없습니다.");
+  async resolveIncident(id: number): Promise<Incident> {
+    const db = read();
+    const incident = (db.incidents ?? []).find((i) => i.id === id);
+    if (!incident) throw new Error("이상 기록을 찾을 수 없습니다.");
+    const project = ownedProject(db, incident.projectId);
+    if (incident.status === "OPEN") {
+      incident.status = "RESOLVED";
+      incident.resolvedAt = new Date().toISOString();
+      incident.resolvedBy = "USER";
+      pushEvent(db, project, "INCIDENT_RESOLVED", "INFO", "이상을 해결했습니다", incident.title);
+      write(db);
+    }
+    return delay(incident, 80);
+  },
+
+  async incidentPreview(id: number) {
+    const db = read();
+    const incident = (db.incidents ?? []).find((i) => i.id === id);
+    if (!incident) throw new Error("이상 기록을 찾을 수 없습니다.");
+    ownedProject(db, incident.projectId);
+    return { message: slackMessage(incident), externalDelivery: false };
+  },
+
+  async seedDemo(): Promise<DemoSeed> {
+    const db = read();
+    const found = ownedProjects(db).find((p) => p.projectCode === DEMO_CODE);
+    if (found) {
+      const agent = (db.agents ?? []).find((a) => a.projectId === found.id);
+      const analysis = db.analyses.filter((a) => a.projectId === found.id).at(-1);
+      if (agent && analysis) return { projectId: found.id, agentId: agent.id, analysisId: analysis.id };
+    }
+    const project = found ?? await mockApi.createProject({ name: "단지서버 월패드 연동 데모", projectCode: DEMO_CODE, description: "실제 장애 서버에 접속하지 않는 합성 시드 시연 프로젝트", technologies: [{ category: "LANGUAGE", name: "TypeScript" }] });
+      for (const [name, kind] of [["wallpad-source.zip", "SOURCE"], ["rules.md", "RULE"], ["gaepo-synthetic.log", "LOG"], ["buksuwon-synthetic.log", "LOG"]] as const) {
+        if (read().files.some((f) => f.projectId === project.id && f.originalFilename === name && f.fileType === kind)) continue;
+        const response = await fetch(`/demo/${name}`);
+        if (!response.ok) throw new Error(`시연 파일 ${name}을 읽지 못했습니다. 데모 파일 준비를 확인해주세요.`);
+        await mockApi.addFile(project.id, new File([await response.blob()], name), kind);
+      }
+    const analysis = await mockApi.startAnalysis(project.id);
+    const next = read();
+    const now = new Date().toISOString();
+    const points = seededMetrics(now);
+    const last = points[points.length - 1];
+    const agent: Agent = { id: nextId(next), projectId: project.id, name: "월패드 시연 에이전트", tokenPrefix: "demo-public", hostname: "wallpad-demo-01", os: "Windows (synthetic)", agentVersion: "demo-v1", state: "ONLINE", lastSeenAt: now, createdAt: now, latest: { collectedAt: now, ...last } };
+    next.agents = [...(next.agents ?? []), agent];
+    next.demoAnchors = { ...next.demoAnchors, [project.id]: now };
+    next.logs = [...(next.logs ?? []), ...Array.from({ length: 20 }, (_, index): LogEntry => ({ id: nextId(next), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: "INFO", message: `[DEMO] gateway response received copy=00-0001 durationMs=120 sample=${index}`, loggedAt: new Date(Date.parse(now) - (19 - index) * 30_000).toISOString() }))];
+    pushEvent(next, next.projects.find((p) => p.id === project.id), "AGENT_CONNECTED", "INFO", "시연 에이전트가 연결되었습니다", "결정적 합성 지표 60개·최근 로그 20개 준비");
+    // Parsing already finished, so make the seed analysis immediately reviewable.
+    const saved = next.analyses.find((a) => a.id === analysis.id);
+    if (saved) saved.createdAt = new Date(Date.now() - 4000).toISOString();
+    write(next);
+    settleAnalyses(next);
+    return { projectId: project.id, agentId: agent.id, analysisId: analysis.id };
+  },
+
+  async resetDemo(): Promise<void> {
+    const db = read();
+    const ids = new Set(ownedProjects(db).filter((p) => p.projectCode === DEMO_CODE).map((p) => p.id));
+    const agentIds = new Set((db.agents ?? []).filter((a) => ids.has(a.projectId)).map((a) => a.id));
+    await deleteParsedFiles(db.files.filter((f) => ids.has(f.projectId)).map((f) => f.id));
+    db.projects = db.projects.filter((p) => !ids.has(p.id));
+    db.files = db.files.filter((f) => !ids.has(f.projectId));
+    db.analyses = db.analyses.filter((a) => !ids.has(a.projectId));
+    db.agents = (db.agents ?? []).filter((a) => !ids.has(a.projectId));
+    db.incidents = (db.incidents ?? []).filter((i) => !ids.has(i.projectId));
+    db.events = (db.events ?? []).filter((e) => !e.projectId || !ids.has(e.projectId));
+    db.logs = (db.logs ?? []).filter((l) => !agentIds.has(l.agentId));
+    db.alertRules = (db.alertRules ?? []).filter((r) => !r.projectId || !ids.has(r.projectId));
+    db.deliveries = (db.deliveries ?? []).filter((d) => !d.projectId || !ids.has(d.projectId));
+    for (const id of ids) if (db.demoAnchors) delete db.demoAnchors[id];
+    write(db);
+  },
+
+  async triggerDemo(projectId: number, scenario: DemoScenario): Promise<Incident> {
+    const db = read();
+    const project = ownedProject(db, projectId);
+    if (project.projectCode !== DEMO_CODE || !db.demoAnchors?.[projectId]) throw new Error("먼저 안전 시연 데이터를 준비해주세요.");
+    const rule = scenario === "LATENCY" ? "LATENCY" : "ERROR_SPIKE";
+    const existing = (db.incidents ?? []).find((i) => i.projectId === projectId && i.rule === rule && i.status === "OPEN");
+    if (existing) return existing;
+    const agent = (db.agents ?? []).find((a) => a.projectId === projectId && a.state === "ONLINE");
+    if (!agent) throw new Error("시연 에이전트를 찾을 수 없습니다.");
+    const now = new Date().toISOString();
+    const insight = localInsight(scenario, agent.hostname ?? agent.name);
+    const incident: Incident = { id: nextId(db), projectId, projectName: project.name, projectCode: project.projectCode, agentId: agent.id, agentName: agent.name, rule, ruleLabel: scenario === "LATENCY" ? "응답 지연" : "오류 추세 이상", severity: "CRITICAL", status: "OPEN", title: scenario === "LATENCY" ? "월패드 연동 응답 지연 감지" : "월패드 연동 오류 급증 감지", detail: `응답 ${insight.currentResponseMs}ms · Timeout ${insight.timeoutCount}건 · 오류 ${insight.errorCount}건`, observed: scenario === "LATENCY" ? insight.currentResponseMs : insight.errorCount, threshold: scenario === "LATENCY" ? 1000 : 10, openedAt: now, lastDetectedAt: now, insight };
+    db.incidents = [...(db.incidents ?? []), incident];
+    db.logs = [...(db.logs ?? []), ...Array.from({ length: insight.errorCount + insight.timeoutCount }, (_, index): LogEntry => ({ id: nextId(db), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: index < insight.timeoutCount ? "WARN" : "ERROR", message: index < insight.timeoutCount ? `[DEMO] gateway response Timeout; synthetic deadline exceeded durationMs=${insight.currentResponseMs}` : "[DEMO] copy format ERROR: invalid synthetic value; expected NN-NNNN", loggedAt: now }))];
+    agent.lastSeenAt = now;
+    pushEvent(db, project, "INCIDENT_OPENED", "ERROR", incident.title, incident.detail);
+    write(db);
+    return delay(incident, 80);
+  },
+
+  async recoverDemo(projectId: number): Promise<void> {
+    const db = read();
+    const project = ownedProject(db, projectId);
+    if (project.projectCode !== DEMO_CODE) throw new Error("시연 프로젝트만 복구할 수 있습니다.");
+    const now = new Date().toISOString();
+    for (const incident of (db.incidents ?? []).filter((i) => i.projectId === projectId && i.status === "OPEN")) {
+      incident.status = "RESOLVED"; incident.resolvedAt = now; incident.resolvedBy = "USER";
+      pushEvent(db, project, "INCIDENT_RESOLVED", "INFO", "시연 서버가 정상 응답으로 복구되었습니다", incident.title);
+    }
+    const agent = (db.agents ?? []).find((a) => a.projectId === projectId && a.state === "ONLINE");
+    if (agent) {
+      db.demoAnchors = { ...db.demoAnchors, [projectId]: now };
+      agent.lastSeenAt = now;
+      db.logs = [...(db.logs ?? []), { id: nextId(db), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: "INFO", message: "[DEMO] recovery complete; gateway response received durationMs=120", loggedAt: now }];
+    }
+    write(db);
   },
 
   async alertChannels(): Promise<AlertChannel[]> {

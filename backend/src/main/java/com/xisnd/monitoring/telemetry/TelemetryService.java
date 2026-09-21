@@ -47,6 +47,7 @@ public class TelemetryService {
     private final LogEntryRepository logRepository;
     private final MetricPointRepository metricRepository;
     private final IncidentRepository incidentRepository;
+    private final com.xisnd.monitoring.incident.IncidentMetrics incidentMetrics;
 
     @Transactional(readOnly = true)
     public List<LogEntryResponse> logs(Long userId, Long projectId, Long agentId, String minLevel, String query,
@@ -110,7 +111,7 @@ public class TelemetryService {
             incidents += open;
             rows.add(new ProjectMonitoring(p.getId(), p.getName(), p.getProjectCode(), agents, counts, open));
         }
-        return new MonitoringOverview(total, online, errors, incidents, rows, now);
+        return new MonitoringOverview(total, online, errors, incidents, rows, now, incidentMetrics.health(projects), incidentMetrics.trend(projects));
     }
 
     public LevelCount levelCount(Long projectId, LocalDateTime from) {

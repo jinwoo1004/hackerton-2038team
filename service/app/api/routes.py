@@ -5,9 +5,21 @@ from app.analysis.engine import AnalysisEngine
 from app.core.config import get_settings
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse, HealthResponse
 from app.schemas.anomaly import AnomalyRequest, AnomalyResponse
+from app.parser.documents import extract_text
+from app.analysis.engine import _resolve
 
 router = APIRouter()
 engine = AnalysisEngine()
+
+
+@router.post("/rules/documents", tags=["analysis"])
+def rule_documents(request: AnalysisRequest) -> dict:
+    documents = []
+    for path in request.ruleFiles:
+        text, note = extract_text(_resolve(path))
+        documents.append({"name": request.fileNames.get(path, path.rsplit("/", 1)[-1]),
+                          "text": (text or "")[:60000], "parsed": text is not None, "note": note})
+    return {"documents": documents}
 
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])

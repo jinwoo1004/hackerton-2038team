@@ -1,0 +1,10 @@
+{
+  "sourceBaseline": "8d4d5ce",
+  "trackedFilesListed": 381,
+  "textFilesScanned": 361,
+  "protectedDesignAndBuildChanges": [],
+  "credentialPatternMatches": [],
+  "runtimeLogCredentialPatternMatches": [],
+  "openAiKeyPresent": false,
+  "note": "Pattern scan checks likely credential literals without printing matched values; does not prove absence of every possible secret."
+}

@@ -1,0 +1,6 @@
+2026-09-21 09:00:00,000 INFO [DEMO][FrameToWorkerItemDecoder] received $version=2.0$cmd=30$copy=00-0001$target=gateway durationMs=120
+2026-09-21 09:00:01,000 INFO [DEMO][OutboundTap] sent $version=2.0$cmd=31$copy=00-0001$target=gateway durationMs=122
+2026-09-21 09:00:02,000 ERROR [DEMO][Parse] copy format ERROR: synthetic value 'INVALID'; expected NN-NNNN
+2026-09-21 09:00:03,000 INFO [DEMO][FrameToWorkerItemDecoder] received $version=2.0$cmd=30$copy=00-0002$target=secsensor durationMs=118
+2026-09-21 09:00:04,000 WARN [DEMO][Gateway] synthetic Timeout durationMs=3200
+2026-09-21 09:00:05,000 INFO [DEMO][Gateway] synthetic recovery durationMs=120

@@ -30,13 +30,17 @@ public class IncidentService {
     private final AgentRepository agentRepository;
     private final EventService eventService;
     private final ApplicationEventPublisher publisher;
+    private final com.xisnd.monitoring.alert.IncidentInsight insight;
 
     @Transactional
     public Incident raise(Signal signal, LocalDateTime now) {
         Optional<Incident> existing = repository.findFirstByDedupKeyAndStatus(signal.dedupKey(), IncidentStatus.OPEN);
         if (existing.isPresent()) {
             Incident incident = existing.get();
-            if (incident.refresh(signal.severity(), signal.title(), signal.detail(), signal.observed(), now)) {
+            boolean changed = !java.util.Objects.equals(incident.getObserved(), signal.observed()) || !java.util.Objects.equals(incident.getDetail(), signal.detail());
+            boolean escalated = incident.refresh(signal.severity(), signal.title(), signal.detail(), signal.observed(), now);
+            if (changed || escalated || incident.getInsightJson() == null) insight.attach(incident);
+            if (escalated) {
                 publisher.publishEvent(new IncidentChanged(incident.getId(), IncidentChanged.Kind.ESCALATED));
             }
             return incident;
@@ -57,6 +61,7 @@ public class IncidentService {
                 .threshold(signal.threshold())
                 .openedAt(now)
                 .build());
+        insight.attach(incident);
         eventService.record(project, EventType.INCIDENT_OPENED,
                 signal.severity() == IncidentSeverity.CRITICAL ? EventLevel.ERROR : EventLevel.WARNING,
                 incident.getTitle(), incident.getDetail());
@@ -89,6 +94,8 @@ public class IncidentService {
 
     @Transactional(readOnly = true)
     public List<IncidentResponse> search(Long userId, Long projectId, IncidentStatus status, int limit) {
+        if (projectId != null) projectRepository.findById(projectId).filter(p -> p.getCreatedBy().equals(userId))
+            .orElseThrow(() -> ApiException.notFound("프로젝트를 찾을 수 없습니다."));
         Map<Long, Project> projects = projectRepository.findByCreatedByOrderByCreatedAtDesc(userId).stream()
                 .filter(p -> projectId == null || p.getId().equals(projectId))
                 .collect(Collectors.toMap(Project::getId, Function.identity()));
@@ -114,6 +121,16 @@ public class IncidentService {
         String agentName = incident.getAgentId() == null ? null
                 : agentRepository.findById(incident.getAgentId()).map(Agent::getName).orElse(null);
         return IncidentResponse.of(incident, project, agentName);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> preview(Long userId, Long incidentId) {
+        Incident incident = repository.findById(incidentId).orElseThrow(() -> ApiException.notFound("이상 기록을 찾을 수 없습니다."));
+        Project project = projectRepository.findById(incident.getProjectId()).filter(p -> p.getCreatedBy().equals(userId))
+            .orElseThrow(() -> ApiException.notFound("이상 기록을 찾을 수 없습니다."));
+        String message = "[" + (incident.isOpen() ? incident.getSeverity().name() : "해결") + "] " + project.getName() + " · " + incident.getTitle()
+            + "\n" + insight.summarize(incident).orElse(incident.getDetail());
+        return Map.of("message", message, "externalDelivery", false);
     }
 
     public record Signal(Long projectId, Long agentId, IncidentRule rule, IncidentSeverity severity, String dedupKey,

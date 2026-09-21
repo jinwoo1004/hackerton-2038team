@@ -1,0 +1,19 @@
+# Copy to application-local.yml (gitignored) for direct Gradle development.
+# demo.ps1 uses application-demo.yml and supplies its own isolated data paths.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/local;DB_CLOSE_ON_EXIT=FALSE}
+    username: sa
+    password: ${LOCAL_DB_PASSWORD:}
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET}
+  llm:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-4.1-mini}

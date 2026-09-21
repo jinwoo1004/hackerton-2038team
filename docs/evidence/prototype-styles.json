@@ -1,0 +1,62 @@
+[
+  {
+    "selector": "body",
+    "fontFamily": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Noto Sans KR\", sans-serif",
+    "fontSize": "16px",
+    "color": "rgb(15, 23, 42)",
+    "background": "rgb(255, 255, 255)",
+    "borderRadius": "0px",
+    "width": 1440,
+    "height": 900,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "selector": "h1",
+    "fontFamily": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Noto Sans KR\", sans-serif",
+    "fontSize": "19px",
+    "color": "rgb(15, 23, 42)",
+    "background": "rgba(0, 0, 0, 0)",
+    "borderRadius": "0px",
+    "width": 178.15625,
+    "height": 28.5,
+    "x": 884.703125,
+    "y": 220.75
+  },
+  {
+    "selector": "input",
+    "fontFamily": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Noto Sans KR\", sans-serif",
+    "fontSize": "14px",
+    "color": "rgb(15, 23, 42)",
+    "background": "rgba(0, 0, 0, 0)",
+    "borderRadius": "8px 0px 0px 8px",
+    "width": 197,
+    "height": 42,
+    "x": 814.78125,
+    "y": 303.375
+  },
+  {
+    "selector": "#login-password",
+    "fontFamily": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Noto Sans KR\", sans-serif",
+    "fontSize": "14px",
+    "color": "rgb(15, 23, 42)",
+    "background": "rgb(255, 255, 255)",
+    "borderRadius": "8px",
+    "width": 320,
+    "height": 44,
+    "x": 813.78125,
+    "y": 358.375
+  },
+  {
+    "selector": "button[type=submit]",
+    "fontFamily": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Noto Sans KR\", sans-serif",
+    "fontSize": "15px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgb(37, 99, 235)",
+    "borderRadius": "8px",
+    "width": 320,
+    "height": 44,
+    "x": 813.78125,
+    "y": 414.375
+  }
+]

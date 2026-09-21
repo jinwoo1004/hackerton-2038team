@@ -45,6 +45,7 @@ public class DashboardService {
     private final AnalysisServiceClient analysisClient;
     private final DataSource dataSource;
     private final AgentRepository agentRepository;
+    private final com.xisnd.monitoring.incident.IncidentMetrics incidentMetrics;
 
     @Transactional(readOnly = true)
     public DashboardResponse dashboard(Long userId) {
@@ -95,7 +96,8 @@ public class DashboardService {
                         scores.isEmpty() ? null : (int) Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(0)));
 
         return new DashboardResponse(projectCounts, fileCount, analysisCounts,
-                new SeverityCounts(critical, warning, info), health, eventService.recent(userId, 8));
+                new SeverityCounts(critical, warning, info), health, eventService.recent(userId, 8),
+                incidentMetrics.health(projects), incidentMetrics.trend(projects));
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,7 @@ import { formatDateTime, formatRelative } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/cn";
 import type { Incident } from "@/types";
 import { INCIDENT_SEVERITY } from "./meta";
+import { IncidentInsightCard } from "./IncidentInsightCard";
 
 export function IncidentList({
   incidents,
@@ -62,6 +63,7 @@ export function IncidentList({
                   </span>
                 )}
               </p>
+              <IncidentInsightCard incident={i} />
             </div>
             {open && onResolve && (
               <button

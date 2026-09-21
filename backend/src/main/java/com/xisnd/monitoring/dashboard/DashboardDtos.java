@@ -40,7 +40,9 @@ public final class DashboardDtos {
             AnalysisCounts analyses,
             SeverityCounts severity,
             List<ProjectHealth> projectHealth,
-            List<EventResponse> recentEvents) {
+            List<EventResponse> recentEvents,
+            com.xisnd.monitoring.incident.IncidentMetrics.Health health,
+            List<com.xisnd.monitoring.incident.IncidentMetrics.Trend> incidentTrend) {
     }
 
     public record AnalysisListItem(

@@ -23,6 +23,9 @@ import { incidentApi } from "@/services/alertApi";
 import { dashboardApi, eventApi } from "@/services/dashboardApi";
 import { SERIES_COLORS } from "@/features/analysis/severity";
 import { IncidentList } from "@/features/monitoring/IncidentList";
+import { DemoControl } from "@/features/monitoring/DemoControl";
+import { LiveHealthSummary } from "@/features/monitoring/LiveHealthSummary";
+import { DATA_CHANGED, notifyDataChanged } from "@/services/demoApi";
 import { MetricChart } from "@/features/monitoring/MetricChart";
 import { Sparkline, UsageTrendChart, type UsageSeries } from "@/features/monitoring/UsageTrendChart";
 import { cn } from "@/shared/lib/cn";
@@ -47,7 +50,7 @@ import type {
 type LoadState = "loading" | "ready" | "error";
 type MetricKey = "cpuPct" | "memoryPct" | "diskPct";
 
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 5_000;
 const MAX_PROJECTS = 8;
 
 const METRICS: { key: MetricKey; label: string; title: string; icon: LucideIcon; color: string }[] = [
@@ -125,6 +128,13 @@ export default function MonitoringPage() {
     const timer = setInterval(loadIncidents, REFRESH_MS);
     return () => clearInterval(timer);
   }, [loadIncidents]);
+
+  useEffect(() => {
+    const refreshAll = () => { load(true); loadIncidents(); };
+    window.addEventListener(DATA_CHANGED, refreshAll);
+    window.addEventListener("storage", refreshAll);
+    return () => { window.removeEventListener(DATA_CHANGED, refreshAll); window.removeEventListener("storage", refreshAll); };
+  }, [load, loadIncidents]);
 
   const agentProjects = useMemo(
     () => (overview?.projects ?? []).filter((p) => p.agents.length > 0).slice(0, MAX_PROJECTS).map((p) => p.projectId),
@@ -207,6 +217,8 @@ export default function MonitoringPage() {
   return (
     <div className="space-y-5">
       <Hero overview={overview} system={system} refreshing={refreshing} onRefresh={refresh} />
+      <DemoControl />
+      <LiveHealthSummary />
       <StatCards overview={overview} aggregated={aggregated} start={start} end={end} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
@@ -280,7 +292,7 @@ function Hero({
               {koreanDate(now)} {koreanTime(now)}
             </p>
           )}
-          <p className="mt-0.5 text-[12px] text-ink-400">30초마다 자동 갱신</p>
+          <p className="mt-0.5 text-[12px] text-ink-400">5초마다 자동 갱신</p>
         </div>
         <button
           type="button"
@@ -317,7 +329,9 @@ function StatCards({
   const agents = overview.projects.flatMap((p) => p.agents);
   const offline = overview.agentsTotal - overview.agentsOnline;
   const serverState =
-    overview.agentsTotal === 0
+    overview.openIncidents > 0
+      ? { dot: "bg-toss-red", text: `확인할 이상 ${overview.openIncidents}건` }
+      : overview.agentsTotal === 0
       ? { dot: "bg-ink-300", text: "연결된 서버 없음" }
       : offline > 0
         ? { dot: "bg-toss-red", text: `${offline}대 연결 끊김` }
@@ -501,7 +515,8 @@ function EventsCard({ events }: { events: ActivityEvent[] }) {
   );
 }
 
-function serverBadge(agent: Agent): { label: string; className: string } {
+function serverBadge(agent: Agent, openIncidents: number): { label: string; className: string } {
+  if (openIncidents > 0) return { label: "이상 감지", className: "bg-toss-red text-white" };
   if (agent.state === "OFFLINE") return { label: "연결 끊김", className: "bg-toss-red text-white" };
   if (agent.state === "PENDING") return { label: "연결 대기", className: "bg-ink-400 text-white" };
   const high = METRICS.some((m) => (agent.latest?.[m.key] ?? 0) >= 90);
@@ -539,7 +554,7 @@ function ServerList({
       ) : (
         <ul>
           {agents.map(({ agent, project }) => {
-            const badge = serverBadge(agent);
+            const badge = serverBadge(agent, project.openIncidents);
             const expanded = open === agent.id;
             const res = metrics.get(project.projectId);
             const series = (res?.series ?? []).filter((s) => s.agentId === agent.id);
@@ -656,6 +671,7 @@ function IncidentsCard({
     setResolving(incident.id);
     try {
       await incidentApi.resolve(incident.id);
+      notifyDataChanged();
       toast.success("해결 처리했습니다.");
       onChanged();
     } catch (err) {

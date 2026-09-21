@@ -129,6 +129,8 @@ export interface ProjectHealth {
 }
 
 export interface Dashboard {
+  health?: HealthSummary;
+  incidentTrend?: IncidentTrend[];
   projects: { total: number; ready: number; analyzing: number; active: number; error: number };
   fileCount: number;
   analyses: { total: number; running: number; completed: number; failed: number; averageScore?: number | null };
@@ -253,6 +255,8 @@ export interface ProjectMonitoring {
 }
 
 export interface MonitoringOverview {
+  health?: HealthSummary;
+  incidentTrend?: IncidentTrend[];
   agentsTotal: number;
   agentsOnline: number;
   errors1h: number;
@@ -262,6 +266,7 @@ export interface MonitoringOverview {
 }
 
 export type IncidentRule =
+  | "LATENCY"
   | "AGENT_DOWN"
   | "CPU_HIGH"
   | "MEMORY_HIGH"
@@ -276,6 +281,7 @@ export type IncidentSeverity = "WARNING" | "CRITICAL";
 export type IncidentStatus = "OPEN" | "RESOLVED";
 
 export interface Incident {
+  insight?: IncidentInsight | null;
   id: number;
   projectId: number;
   projectName?: string | null;
@@ -294,6 +300,34 @@ export interface Incident {
   lastDetectedAt: string;
   resolvedAt?: string | null;
   resolvedBy?: string | null;
+}
+
+export interface HealthSummary { total: number; normal: number; warning: number; critical: number; openIncidents: number }
+export interface IncidentTrend { date: string; opened: number; resolved: number }
+
+export interface IncidentInsight {
+  source: "OPENAI" | "LOCAL";
+  serverName: string;
+  baselineResponseMs: number | null;
+  currentResponseMs: number | null;
+  timeoutCount: number;
+  errorCount: number;
+  severity: IncidentSeverity;
+  summary: string;
+  evidence: string[];
+  causes: string[];
+  actions: string[];
+}
+
+export interface SlackPreview {
+  message: string;
+  externalDelivery: boolean;
+}
+
+export interface DemoSeed {
+  projectId: number;
+  agentId: number;
+  analysisId: number;
 }
 
 export type AlertChannelType = "SLACK";
@@ -364,6 +398,8 @@ export type Severity = "CRITICAL" | "WARNING" | "INFO";
 export type FindingCategory = "quality" | "errors" | "security" | "performance" | "rules" | "logs";
 
 export interface AnalysisFinding {
+  ruleSource?: string | null;
+  ruleText?: string | null;
   ruleId: string;
   category: FindingCategory;
   severity: Severity;
@@ -410,6 +446,7 @@ export interface LogStats {
 }
 
 export interface RuleStats {
+  extractionSource?: "LOCAL" | "OPENAI";
   documents: { name: string; parsed: boolean; ruleCount: number; note?: string | null }[];
   forbidden: string[];
   limits: { fileLines: number; functionLines: number; lineLength: number };

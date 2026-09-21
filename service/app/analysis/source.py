@@ -24,7 +24,7 @@ class FindingCollector:
         self.by_category: dict[str, Counter] = defaultdict(Counter)
         self._per_file: Counter = Counter()
 
-    def add(self, *, rule_id, category, severity, title, message, file=None, line=None, snippet=None, recommendation=None):
+    def add(self, *, rule_id, category, severity, title, message, file=None, line=None, snippet=None, recommendation=None, rule_source=None, rule_text=None):
         self.counts[rule_id] += 1
         self.severity[severity] += 1
         self.by_category[category][severity] += 1
@@ -36,6 +36,7 @@ class FindingCollector:
             "ruleId": rule_id, "category": category, "severity": severity, "title": title,
             "message": message, "file": file, "line": line,
             "snippet": snippet[:220] if snippet else None, "recommendation": recommendation,
+            "ruleSource": rule_source, "ruleText": rule_text,
         })
 
 
@@ -126,20 +127,25 @@ def scan_source(zip_path: str, rules: ProjectRules, findings: FindingCollector) 
                     rule_id="R001", category="rules", severity=WARNING, title=f"금지 규칙 위반: {rule['token']}",
                     message=f"규칙 문서에서 금지한 {rule['token']} 을(를) 사용했습니다.", file=entry.path, line=i + 1,
                     snippet=text.strip(), recommendation=f"{rule['source']}: {rule['text']}",
+                    rule_source=rule['source'], rule_text=rule['text'],
                 )
 
         long_lines = [i for i, t in enumerate(lines) if len(t) > rules.line_length]
+        line_rule = next((r for r in reversed(rules.custom_limits) if r['type'] == 'lineLength'), None)
+        file_rule = next((r for r in reversed(rules.custom_limits) if r['type'] == 'fileLines'), None)
         if long_lines:
             findings.add(
-                rule_id="Q002", category="quality", severity=INFO, title="너무 긴 줄",
+                rule_id="R003" if line_rule else "Q002", category="rules" if line_rule else "quality", severity=INFO, title="너무 긴 줄",
                 message=f"{len(long_lines)}줄이 {rules.line_length}자를 넘습니다.", file=entry.path, line=long_lines[0] + 1,
                 recommendation="줄을 나누거나 변수로 추출해 가독성을 높이세요.",
+                rule_source=line_rule['source'] if line_rule else None, rule_text=line_rule['text'] if line_rule else None,
             )
         if len(lines) > rules.file_lines:
             findings.add(
-                rule_id="Q003", category="quality", severity=WARNING, title="너무 긴 파일",
+                rule_id="R004" if file_rule else "Q003", category="rules" if file_rule else "quality", severity=WARNING, title="너무 긴 파일",
                 message=f"{len(lines):,}줄로 기준({rules.file_lines:,}줄)을 넘습니다.", file=entry.path,
                 recommendation="역할별로 파일을 나누세요.",
+                rule_source=file_rule['source'] if file_rule else None, rule_text=file_rule['text'] if file_rule else None,
             )
         if entry.size > LARGE_FILE_BYTES:
             findings.add(
@@ -149,6 +155,13 @@ def scan_source(zip_path: str, rules: ProjectRules, findings: FindingCollector) 
             )
 
         functions = find_functions(lines, language)
+        for fn in functions:
+            for naming in rules.naming:
+                pattern = {"camelCase": r"[a-z][a-zA-Z0-9]*", "snake_case": r"[a-z][a-z0-9_]*", "PascalCase": r"[A-Z][a-zA-Z0-9]*"}[naming['value']]
+                if not re.fullmatch(pattern, fn.name):
+                    findings.add(rule_id="R005", category="rules", severity=WARNING, title="함수 네이밍 규칙 위반",
+                        message=f"{fn.name} 함수가 {naming['value']} 기준을 따르지 않습니다.", file=entry.path, line=fn.start,
+                        recommendation=f"{naming['source']}: {naming['text']}", rule_source=naming['source'], rule_text=naming['text'])
         functions_total += len(functions)
         custom = rules.function_lines != DEFAULT_FUNCTION_LINES
         for fn in functions:
@@ -159,6 +172,8 @@ def scan_source(zip_path: str, rules: ProjectRules, findings: FindingCollector) 
                     severity=WARNING, title="너무 긴 함수" if not custom else "함수 길이 규칙 위반",
                     message=f"{fn.name} 함수가 {fn.lines}줄입니다. (기준 {rules.function_lines}줄)",
                     file=entry.path, line=fn.start, recommendation="작은 단위의 함수로 나누세요.",
+                    rule_source=next((r['source'] for r in reversed(rules.custom_limits) if r['type'] == 'functionLines'), None),
+                    rule_text=next((r['text'] for r in reversed(rules.custom_limits) if r['type'] == 'functionLines'), None),
                 )
 
     total_lang_lines = sum(lang_lines.values()) or 1

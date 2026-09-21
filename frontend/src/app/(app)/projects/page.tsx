@@ -7,6 +7,8 @@ import { projectApi } from "@/services/projectApi";
 import { FirstProjectOnboarding } from "@/features/project/FirstProjectOnboarding";
 import { NewProjectCard, ProjectCard } from "@/features/project/ProjectCard";
 import { ProjectMenu } from "@/features/project/ProjectMenu";
+import { DemoControl } from "@/features/monitoring/DemoControl";
+import { DATA_CHANGED } from "@/services/demoApi";
 import { cn } from "@/shared/lib/cn";
 import { formatDate, formatRelative } from "@/shared/lib/format";
 import { Button } from "@/shared/ui/Button";
@@ -74,6 +76,7 @@ export default function ProjectsPage() {
   }, []);
 
   useEffect(load, [load]);
+  useEffect(() => { window.addEventListener(DATA_CHANGED, load); return () => window.removeEventListener(DATA_CHANGED, load); }, [load]);
 
   const techOptions = useMemo(
     () => Array.from(new Set(projects.flatMap((p) => p.technologies.map((t) => t.name)))).sort((a, b) => a.localeCompare(b)),
@@ -115,6 +118,7 @@ export default function ProjectsPage() {
   return (
     <>
       <Header />
+      <div className="mb-5"><DemoControl /></div>
 
       {status === "loading" && (
         <>
@@ -270,7 +274,7 @@ function Summary({ projects }: { projects: Project[] }) {
   const recent = projects.filter((p) => Date.now() - Date.parse(p.createdAt) < WEEK).length;
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
   const items = [
-    { label: "운영중", value: count("ACTIVE"), dot: "bg-toss-green", text: "text-toss-green", hint: "정상 운영 중인 프로젝트" },
+    { label: "운영중", value: count("ACTIVE"), dot: "bg-toss-green", text: "text-toss-green", hint: "초기 분석을 마친 프로젝트" },
     { label: "분석중", value: count("ANALYZING"), dot: "bg-primary-600", text: "text-primary-600", hint: "분석이 진행 중인 프로젝트" },
     { label: "오류", value: count("ERROR"), dot: "bg-toss-red", text: "text-toss-red", hint: "문제가 발생한 프로젝트" },
   ];

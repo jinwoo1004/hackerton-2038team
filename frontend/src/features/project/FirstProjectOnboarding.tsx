@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ArrowRight, ChevronLeft, Play, X } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { DashboardPreview } from "@/features/project/onboarding/DashboardPreview";
+import { DemoControl } from "@/features/monitoring/DemoControl";
 import { TECH_GROUPS } from "@/features/project/techOptions";
 import { STEP_COPY, WIZARD_STEPS } from "@/features/project/wizard/types";
 import { useProjectWizard } from "@/features/project/wizard/useProjectWizard";
@@ -150,6 +151,7 @@ function Intro({ onStart }: { onStart: () => void }) {
           <p style={delay(680)} className="animate-rise-in mt-4 text-[13px] text-toss-sub">
             3분이면 충분해요. 규칙 문서와 소스는 나중에 올려도 괜찮아요.
           </p>
+          <div className="mt-5"><DemoControl showIncident={false} /></div>
 
           <dl
             style={delay(800)}

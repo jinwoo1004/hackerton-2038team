@@ -1,6 +1,8 @@
 # Frontend
 /frontend/node_modules/
 /frontend/.next/
+/frontend/.next-demo-full/
+/frontend/.next-demo-frontend/
 /frontend/out/
 /frontend/.turbo/
 /frontend/tsconfig.tsbuildinfo
@@ -52,6 +54,7 @@ Thumbs.db
 
 # Logs
 *.log
+!/demo-fixtures/*-synthetic.log
 
 # Never publish machine-specific credentials
 /backend/src/main/resources/application-local.yml
@@ -60,4 +63,6 @@ Thumbs.db
 .env.local
 .local-secrets*
 .demo/
+.tools/
+.work/
 

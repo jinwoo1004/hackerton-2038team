@@ -26,6 +26,15 @@ class AuthAndProjectFlowTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private org.springframework.context.ApplicationContext context;
+
+    @Test
+    void 데모_토큰_API는_demo_프로파일에서만_등록된다() {
+        org.assertj.core.api.Assertions.assertThat(context.getBeansOfType(com.xisnd.monitoring.demo.DemoController.class)).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(context.getBeansOfType(com.xisnd.monitoring.demo.DemoService.class)).isEmpty();
+    }
+
     @Test
     void 인증없이_프로젝트를_조회하면_401() throws Exception {
         mockMvc.perform(get("/api/projects")).andExpect(status().isUnauthorized());

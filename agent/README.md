@@ -84,6 +84,19 @@ UAC 를 거부하면 서비스 없이 로그인한 동안 트레이 프로세스
 
 ## 개발 중 실행
 
+### 해커톤 합성 시연
+
+루트 `demo.ps1`은 데모 프로젝트의 `wallpad-demo-01` Agent 토큰을 회전해 Worker를 `--demo`로 실행한다.
+이 경로는 서비스 설치·실제 시스템 지표 측정·실제 로그 파일 읽기를 하지 않는다.
+5초마다 고정 수식으로 CPU/메모리/디스크/네트워크 지표와 `[SYNTHETIC]` 로그를 생성하여
+기존 `/api/ingest/heartbeat`, `/api/ingest/metrics`, `/api/ingest/logs`에 전송한다.
+시작 시각만 현재 시각에 맞추며, 같은 시작 시각과 순번의 값은 항상 같다.
+
+개별 실행 시 `MONITORING_DEMO_SERVER`에 loopback 주소,
+`MONITORING_DEMO_AGENT_TOKEN`에 플랫폼에서 발급한 토큰을 환경변수로 전달한다.
+토큰을 명령 인자·소스·문서·로그에 넣지 않는다. `--demo-cycles 2`로 두 번만 전송하고 종료할 수 있다.
+`--demo`가 없는 기존 설치·수집·트레이 동작은 유지된다.
+
 관리자 권한 없이 수집만 확인하려면 데이터 폴더를 따로 지정해 콘솔로 띄운다.
 
 ```powershell

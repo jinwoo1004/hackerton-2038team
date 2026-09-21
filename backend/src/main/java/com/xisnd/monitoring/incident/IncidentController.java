@@ -29,4 +29,9 @@ public class IncidentController {
     public IncidentResponse resolve(@PathVariable Long incidentId) {
         return incidentService.resolveManually(CurrentUser.id(), incidentId);
     }
+
+    @GetMapping("/{incidentId}/preview")
+    public java.util.Map<String, Object> preview(@PathVariable Long incidentId) {
+        return incidentService.preview(CurrentUser.id(), incidentId);
+    }
 }

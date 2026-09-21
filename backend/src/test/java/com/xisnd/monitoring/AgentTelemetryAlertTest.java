@@ -240,7 +240,11 @@ class AgentTelemetryAlertTest {
                 .andExpect(jsonPath("$[0].rule").value("CPU_HIGH"))
                 .andExpect(jsonPath("$[0].resolvedBy").value("AUTO"));
         assertThat(received.stream().filter(r -> r.contains("[해결]")).count()).isEqualTo(1);
-        assertThat(received.stream().filter(r -> r.contains("오류 로그")).count()).isEqualTo(1);
+        assertThat(received.stream().filter(r -> {
+            try { return json(r).path("text").asText().contains("오류 로그"); }
+            catch (Exception ex) { throw new AssertionError(ex); }
+        }).count()).isEqualTo(1);
+        assertThat(received.stream().anyMatch(r -> r.contains("가능 원인:") && r.contains("권장 조치:") && r.contains("근거:"))).isTrue();
         assertThat(received.stream().noneMatch(r -> r.contains("치명 로그"))).isTrue();
 
         detector.runOnce(LocalDateTime.now().plusMinutes(5));

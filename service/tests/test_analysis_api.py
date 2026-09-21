@@ -94,10 +94,11 @@ def test_analysis_finds_issues(tmp_path):
     assert "품질 점수" in body["summary"]
 
 
-def test_missing_files_still_complete():
+def test_missing_files_fail_with_evidence():
     payload = {"projectId": 1, "projectCode": "TREECS", "ruleFiles": ["/nope/rule.pdf"], "sourceFile": "/nope/app.zip"}
     body = client.post("/analysis", json=payload).json()
-    assert body["status"] == "COMPLETED"
+    assert body["status"] == "FAILED"
+    assert body["result"]["overview"]["score"] == 0
     assert body["result"]["source"]["available"] is False
     assert any("찾을 수 없습니다" in n for n in body["result"]["notes"])
 

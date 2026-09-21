@@ -1,0 +1,13 @@
+{
+  "synthetic": true,
+  "sha256": {
+    "buksuwon-synthetic.log": "6931ec1da78d6efe69359623a2cb8fb93596b49e5fd1003c319a91fbae81ef14",
+    "gaepo-synthetic.log": "1c9ad2349f402792806a85973fcf4d7c45f8bf7edcf9c30dcb7311d8a075fb97",
+    "rules.docx": "15febab5c1e5713e279fe27c8096d37f8afcb1b8635016fbb4602c7932df60a2",
+    "rules.md": "d19fa823561f16a8f5445b1cc25b7240192c9b2aa883f90e1372ef0d7bc71059",
+    "rules.pdf": "7c65639163734f93829cadeb4c843efb35e8699e1028327a6f3e4db85ae5c760",
+    "rules.xlsx": "a674d3d4143b2c8518dca9dfe874ce3a246f94a372bf9c9bb66e915d7118b146",
+    "scenario.json": "fe5cc676a7506d220677d71f31b59ff1bba416c2543a3c87e1b79453b8a835f9",
+    "wallpad-source.zip": "c5807445044e8282b110f5f3d9d8986cd9ac43c4e240fb0731f773c0b586634f"
+  }
+}

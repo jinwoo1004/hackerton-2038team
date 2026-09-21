@@ -31,6 +31,8 @@ public final class TelemetryDtos {
     }
 
     public record MonitoringOverview(long agentsTotal, long agentsOnline, long errors1h, long openIncidents,
-                                     List<ProjectMonitoring> projects, LocalDateTime checkedAt) {
+                                     List<ProjectMonitoring> projects, LocalDateTime checkedAt,
+                                     com.xisnd.monitoring.incident.IncidentMetrics.Health health,
+                                     List<com.xisnd.monitoring.incident.IncidentMetrics.Trend> incidentTrend) {
     }
 }

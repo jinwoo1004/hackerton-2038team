@@ -11,5 +11,14 @@ public record AnalysisServiceRequest(
         List<String> ruleFiles,
         String sourceFile,
         List<String> logFiles,
-        Map<String, String> fileNames) {
+        Map<String, String> fileNames,
+        List<Map<String, Object>> extractedRules,
+        String ruleExtractionSource) {
+    public AnalysisServiceRequest(Long projectId, String projectCode, List<String> technologies, List<String> ruleFiles,
+            String sourceFile, List<String> logFiles, Map<String, String> fileNames) {
+        this(projectId, projectCode, technologies, ruleFiles, sourceFile, logFiles, fileNames, List.of(), "LOCAL");
+    }
+    public AnalysisServiceRequest withRules(List<Map<String, Object>> rules) {
+        return new AnalysisServiceRequest(projectId, projectCode, technologies, ruleFiles, sourceFile, logFiles, fileNames, rules, "OPENAI");
+    }
 }

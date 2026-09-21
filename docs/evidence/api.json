@@ -1,0 +1,38 @@
+{
+  "started": "2026-09-21T09:24:28.075Z",
+  "checks": [
+    {
+      "name": "health and system status",
+      "status": "PASS",
+      "health": "UP",
+      "services": [
+        {
+          "key": "api",
+          "status": "UP"
+        },
+        {
+          "key": "db",
+          "status": "UP"
+        },
+        {
+          "key": "analysis",
+          "status": "UP"
+        },
+        {
+          "key": "agent",
+          "status": "UP"
+        }
+      ]
+    },
+    {
+      "name": "cross-account project, data, demo endpoints return 404",
+      "status": "PASS",
+      "count": 9
+    },
+    {
+      "name": "project code is immutable after update",
+      "status": "PASS"
+    }
+  ],
+  "slackChannelCount": 0
+}

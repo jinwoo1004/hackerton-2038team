@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "projectCode": "WALLPAD-DEMO",
+  "projectName": "단지서버 월패드 연동 데모",
+  "hostname": "wallpad-demo-01",
+  "baselineResponseMs": 120,
+  "metrics": {
+    "points": 60,
+    "cpuFormula": "28 + (index * 7 % 13)",
+    "memoryFormula": "54 + (index * 3 % 9)",
+    "diskFormula": "42 + index * 0.05"
+  },
+  "scenarios": {
+    "LATENCY": { "currentResponseMs": 3200, "timeoutCount": 8, "errorCount": 3, "severity": "CRITICAL" },
+    "ERROR_SPIKE": { "currentResponseMs": 450, "timeoutCount": 2, "errorCount": 24, "severity": "CRITICAL" }
+  },
+  "normalLog": "[DEMO] gateway response received copy=00-0001 durationMs=120",
+  "errorLog": "[DEMO] copy format ERROR: invalid synthetic value; expected NN-NNNN",
+  "timeoutLog": "[DEMO] gateway response Timeout; synthetic request deadline exceeded"
+}

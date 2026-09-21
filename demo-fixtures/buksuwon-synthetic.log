@@ -1,0 +1,6 @@
+2026-09-21 09:00:00,000 INFO [DEMO][ServerKeepAliveHandler] sent $version=2.0$cmd=10$copy=01-0001$target=gateway durationMs=120
+2026-09-21 09:00:01,000 ERROR [DEMO][Parse] copy format ERROR: synthetic value 'INVALID'; expected NN-NNNN
+2026-09-21 09:00:02,000 ERROR [DEMO][Parse] copy format ERROR: missing synthetic copy field
+2026-09-21 09:00:03,000 INFO [DEMO][FrameToWorkerItemDecoder] received $version=2.0$cmd=30$copy=01-0002$target=boiler durationMs=121
+2026-09-21 09:00:04,000 WARN [DEMO][Gateway] synthetic Timeout durationMs=3200
+2026-09-21 09:00:05,000 INFO [DEMO][Gateway] synthetic recovery durationMs=120

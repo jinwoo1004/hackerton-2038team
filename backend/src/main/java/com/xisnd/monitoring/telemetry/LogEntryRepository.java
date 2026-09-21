@@ -12,6 +12,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface LogEntryRepository extends JpaRepository<LogEntry, Long> {
 
+    @Query("select count(e) from LogEntry e where e.projectId = :projectId and (:agentId is null or e.agentId = :agentId) and e.level in :levels and e.loggedAt >= :from")
+    long countScoped(@Param("projectId") Long projectId, @Param("agentId") Long agentId,
+        @Param("levels") Collection<LogLevel> levels, @Param("from") LocalDateTime from);
+
+    @Query("select count(e) from LogEntry e where e.projectId = :projectId and (:agentId is null or e.agentId = :agentId) and lower(e.message) like '%timeout%' and e.loggedAt >= :from")
+    long countTimeouts(@Param("projectId") Long projectId, @Param("agentId") Long agentId, @Param("from") LocalDateTime from);
+
     @Query("""
             select e from LogEntry e
             where e.projectId = :projectId

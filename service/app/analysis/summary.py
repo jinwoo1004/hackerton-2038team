@@ -33,7 +33,7 @@ def build_summary(project_code: str, result: dict) -> str:
 
     rules = result["rules"]
     if rules["documents"]:
-        applied = len(rules["forbidden"]) + len(rules["customLimits"])
+        applied = len(rules["forbidden"]) + len(rules["customLimits"]) + len(rules.get("naming", []))
         lines.append(f"규칙 문서 {len(rules['documents'])}건에서 규칙 {applied}개를 읽어 분석에 반영했습니다.")
 
     logs = result["logs"]

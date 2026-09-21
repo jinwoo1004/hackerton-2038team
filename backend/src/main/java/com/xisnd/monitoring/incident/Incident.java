@@ -58,6 +58,11 @@ public class Incident {
 
     @Column(length = 1000)
     private String detail;
+    @jakarta.persistence.Lob
+    @Column(name = "insight_json")
+    private String insightJson;
+
+    public void attachInsight(String json) { this.insightJson = json; }
 
     private Double observed;
 
