@@ -1,0 +1,4 @@
+// Keep the running local demo's classes and JAR untouched during readiness checks.
+allprojects {
+    layout.buildDirectory.set(new File(rootProject.projectDir, '../.work/deployment-verification/backend-build'))
+}

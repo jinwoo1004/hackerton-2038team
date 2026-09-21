@@ -21,8 +21,18 @@ def _resolve(path: Optional[str]) -> Optional[str]:
     if not path:
         return None
     p = Path(path)
+    settings = get_settings()
     if not p.is_absolute():
-        p = Path(get_settings().storage_location) / p
+        p = Path(settings.storage_location) / p
+    if settings.app_runtime == "deployed" or settings.analysis_shared_secret.get_secret_value():
+        root = Path(settings.storage_location).resolve()
+        # Follow existing symlinks/junctions, including a missing leaf's parent.
+        # A missing file inside the root keeps the existing failed-analysis behavior.
+        try:
+            p = p.resolve()
+            p.relative_to(root)
+        except (OSError, RuntimeError, ValueError):
+            raise ValueError("Requested file is outside analysis storage") from None
     return str(p)
 
 

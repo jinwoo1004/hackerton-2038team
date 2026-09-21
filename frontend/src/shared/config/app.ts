@@ -16,7 +16,7 @@ export const COMPANY = {
 export const EMAIL_DOMAINS = ["xisnd.com"] as const;
 
 // 비어 있으면 목 모드
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 
 export const USE_MOCK = !API_BASE_URL;
 

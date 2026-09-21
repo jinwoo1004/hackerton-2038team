@@ -18,6 +18,28 @@ uvicorn app.main:app --reload --port 8000
 - 문서: http://localhost:8000/docs
 - 헬스체크: http://localhost:8000/health
 
+### 컨테이너 배포
+
+저장소 루트에서 `docker build -f service/Dockerfile -t monitoring-analysis .`로 빌드한다.
+Python 3.11, UID/GID `10001:10001`, 단일 uvicorn worker, 기본 8000 포트로 실행한다.
+이미지에는 `requirements.txt`와 `app/`만 복사하며 개발용 `.env`, 로컬 로그, 인증 파일을 포함하지 않는다.
+
+운영에는 `APP_RUNTIME=deployed`, `STORAGE_LOCATION=/data/storage`,
+32자 이상의 무작위 `ANALYSIS_SHARED_SECRET`을 환경변수로 지정한다.
+이 비밀값은 백엔드의 `APP_ANALYSIS_SHARED_SECRET`과 같아야 한다.
+누락되거나 약한 인증 값, 상대 storage 경로를 사용하면 시작하지 않는다.
+
+`GET /health`는 인증 없이 `{"status":"UP"}`만 반환한다. 나머지 요청은 `X-Analysis-Token`이 필요하며,
+운영에서는 Swagger/OpenAPI 페이지를 제공하지 않는다. FastAPI 포트는 인터넷에 공개하지 않고 백엔드와의 내부 네트워크에만 연결한다.
+서비스에 OpenAI 키나 Codex 인증 파일을 전달할 필요는 없다.
+
+백엔드의 영속 `/data/storage` 볼륨을 동일 경로에 읽기 전용으로 연결한다.
+배포 또는 shared secret 설정 시 파일 경로는 실제 경로로 해석하여 storage 밖의 절대 경로·`..`·symlink/junction 탈출을 거부한다.
+기존 local/test 환경에서 인증 값을 설정하지 않으면 데모 fixture 절대 경로와 기존 요청 계약을 유지한다.
+분석 결과의 영속 저장은 백엔드 DB가 담당하며 이 서비스의 최근 결과 조회 캐시는 재시작 시 초기화된다.
+
+Docker 엔진이 없는 환경에서는 이미지 실행을 검증할 수 없다. Python 3.11의 소스 회귀는 `python -m pytest tests -q`로 별도 실행한다.
+
 테스트:
 
 ```bash

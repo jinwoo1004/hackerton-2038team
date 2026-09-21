@@ -1,0 +1,120 @@
+{
+  "verifiedAt": "2026-09-21T14:12:18.548555+00:00",
+  "sourceReadinessStatus": "PASS",
+  "externalDeploymentStatus": "BLOCKED",
+  "externalBlocker": "MISSING_ACCESS_AND_SERVER",
+  "dockerAvailable": false,
+  "realModelRequests": 0,
+  "installerExecuted": false,
+  "operationalRestarts": 0,
+  "backend": {
+    "tests": 72,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "bootJar": "PASS",
+    "isolatedOutput": true,
+    "jarSHA256": "ba5a949cdb6e3a1415fee58002d120becdafe1a9a76f6d44c40683288c0ad8bb"
+  },
+  "service": {
+    "tests": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "frontend": {
+    "tests": 13,
+    "testExitCode": 0,
+    "typeCheckExitCode": 0,
+    "verifiedAt": "2026-09-21T14:05:41.4596712+00:00"
+  },
+  "vercelBuild": {
+    "executionOwner": "MAIN",
+    "status": "PASS_OWNER_REPORTED_AND_ARTIFACT_VERIFIED",
+    "buildId": "u987gri1N6lfojlEWcwoC",
+    "apiOrigin": "https://api.example.com",
+    "published": false
+  },
+  "composeSchema": {
+    "executionOwner": "runtime_manager",
+    "status": "PASS_OWNER_REPORTED",
+    "variants": [
+      "base",
+      "TLS",
+      "merged"
+    ],
+    "schemaSHA256": "d61cc3df8c6e6a727043e84f3405c69ffd63d341f629db8480f1d2ee5405b10c",
+    "frozenFilesIndependentlyMatched": true
+  },
+  "secrets": {
+    "bakedInSecretsFoundByStaticChecks": false,
+    "actualImageSecretScan": "UNVERIFIED",
+    "requiredRuntimeServerEnvironment": true,
+    "scope": "COPY/environment/static credential patterns and resource names; actual images not built",
+    "sourceAndBrowserFilesScanned": 327,
+    "jarConfigResourcesScanned": 5,
+    "credentialPatternMatches": 0
+  },
+  "preservation": {
+    "sixPortProcessesUnchanged": true,
+    "runningBackendJarUnchanged": true,
+    "databaseExists": true,
+    "databaseNotByteComparedBecauseLiveAgentWrites": true,
+    "userZipUnchangedAndUntracked": true
+  },
+  "independentChecks": [
+    "private analysis/mysql: no host ports",
+    "internal private network",
+    "backend loopback publication",
+    "TLS public ports and required hostname",
+    "UID10001 and shared storage rw/ro",
+    "explicit deployed API provider",
+    "required runtime configuration",
+    "no OAuth environment in containers",
+    "shared analysis authentication contract",
+    "persistent mysql volume",
+    "single backend/analysis replica",
+    "backend/Dockerfile: nonroot and no literal runtime secrets",
+    "service/Dockerfile: nonroot and no literal runtime secrets",
+    "private artifacts excluded from Docker context",
+    "private frontend artifacts excluded",
+    "deployed MySQL and H2 disabled",
+    "runtime-owner frozen file hashes match",
+    "Git Bash exists",
+    "bash syntax",
+    "external env guard: missing",
+    "external env guard: relative",
+    "external env guard: inside-checkout",
+    "backend 72 tests",
+    "service 23 tests",
+    "frontend tests and type check",
+    "JAR excludes private runtime resources",
+    "source/browser high-confidence credential patterns absent",
+    "JAR config high-confidence credential patterns absent",
+    "deployment build artifact exists",
+    "compiled browser uses explicit example HTTPS API origin",
+    "deployment build isolated from running frontend",
+    "six app listener identities preserved",
+    "running backend JAR preserved",
+    "user Agent ZIP preserved",
+    "operational database remains present",
+    "user ZIP remains untracked"
+  ],
+  "frozenDeploymentFiles": {
+    "deploy/compose.yml": "f01898812da8027f7b9cd5a600ef77ffe356c5e0c250a538f7da2bc9c1c8f9f3",
+    "deploy/compose.tls.yml": "6282120e06b13504cf5c8d6288bbb15fe087ba1811117cbdffa46b7a9085344a",
+    "deploy/Caddyfile": "0be3a57436b01d65f6369b31fa58c05dbf2b5e3f34bb7989bd3379b85ada6f44",
+    "deploy/up.sh": "86ed1cf24017e42a1f707ede9abcc4ab79c6344f076410401cd1ccb7a3faea2d",
+    ".dockerignore": "9f947fb0027808de9f0e9c38f84aab74b5fcbdc762698b7ab78867a8d0ac5e6a"
+  },
+  "notVerified": [
+    "actual Vercel workspace deployment and browser UI",
+    "Docker image build and compose config/up",
+    "server/DNS/TLS",
+    "MySQL live startup and persistence",
+    "actual shared-volume UID ownership",
+    "backup and restore",
+    "real deployed OpenAI API call"
+  ],
+  "validationNote": "Initial verifier command retained empty environment values, causing 13/72 JWT-related failures; fixed only the verification environment with Remove-Item Env:, rerun 72/72 passed. No product fix was needed."
+}

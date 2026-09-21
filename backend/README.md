@@ -48,6 +48,43 @@ local은 API 키를 조회하지 않고, deployed는 OAuth 파일 경로를 조�
 
 ## 환경변수
 
+### 컨테이너 배포
+
+저장소 루트에서 `docker build -f backend/Dockerfile -t monitoring-backend .`로 빌드한다.
+이미지는 Java 17, UID/GID `10001:10001`, 기본 8080 포트를 사용하며 `/api/health`를 검사한다.
+실제 local 설정, 인증 파일, Agent 설치 파일, 개발용 DB는 빌드 입력에 복사하지 않는다.
+
+운영에는 `SPRING_PROFILES_ACTIVE=deployed`, `APP_RUNTIME=deployed`, `LLM_PROVIDER=openai_api`를 사용한다.
+다음 값은 배포 환경의 비밀변수/환경변수로 반드시 지정한다:
+
+| 변수 | 운영 값의 조건 |
+| --- | --- |
+| `DB_URL` | 영속 MySQL JDBC URL. 외부 DB는 공급자 지침에 맞춰 TLS 인증 설정 |
+| `DB_USERNAME`, `DB_PASSWORD` | 해당 DB 사용자와 비밀번호 |
+| `APP_JWT_SECRET` | 32바이트 이상, 충분히 다양한 문자로 생성한 무작위 비밀값 |
+| `APP_ANALYSIS_SHARED_SECRET` | 32자 이상 무작위 값. FastAPI의 `ANALYSIS_SHARED_SECRET`과 동일 |
+| `APP_ANALYSIS_BASE_URL` | 내부 서비스 URL, 예: `http://analysis:8000` |
+| `APP_CORS_ALLOWED_ORIGINS` | 정확한 HTTPS 프런트 출처. 여러 개면 쉼표 구분, wildcard 금지 |
+| `APP_PUBLIC_URL` | HTTPS 프런트 공개 URL |
+| `OPENAI_MODEL`, `OPENAI_API_KEY` | 배포 전용 API 모델과 키. Codex OAuth 파일 사용 안 함 |
+
+운영 설정 검증은 DB/웹서버 기동 전에 실행한다. `local`, `demo`, `test` 프로파일을 운영과 혼합하거나,
+필수 값이 없거나, 기본 JWT 비밀값을 사용하면 시작하지 않는다. H2 콘솔과 actuator 경로는 공개하지 않는다.
+
+`APP_STORAGE_LOCATION=/data/storage`에 영속 볼륨을 읽기/쓰기로 연결하고, FastAPI에도 같은 볼륨을 같은 절대 경로로 읽기 전용 연결한다.
+두 이미지의 UID/GID는 동일하다. 새 named volume은 디렉터리 소유권을 상속하는지 확인하고,
+기존 bind mount는 호스트에서 UID 10001에 쓰기 권한을 준비한다. 업로드 경로와 DB를 함께 백업한다.
+
+Agent 설치 파일 다운로드까지 제공하려면 검증된 설치 산출물을 별도 읽기 전용 마운트하고
+`APP_AGENT_INSTALLER_PATH`로 컨테이너 내부 경로를 지정한다. 기본 이미지는 설치 파일을 포함하지 않는다.
+미공급 상태에서는 설치 파일 정보 API가 `available:false`, 다운로드 API가 404를 반환하며 다른 API는 동작한다.
+
+현재 분석 큐·알림 큐·탐지 스케줄러는 프로세스 내부에서 실행하므로 백엔드는 **단일 replica, 상시 실행**으로 운영한다.
+서버 재시작으로 중단된 분석은 실패로 표시되고 사용자가 다시 실행할 수 있다. MySQL 스키마는 기존 `ddl-auto:update`를 유지한다.
+대용량 업로드를 위해 프록시 제한도 맞춰야 한다(앱 기본 파일당 500MB). 루트 `docs/DEPLOYMENT.md`의 컨테이너 연결 구성을 참고한다.
+
+Docker 엔진이 없는 개발 환경에서는 이미지 빌드·실행 검증은 수행하지 못한다. Java 회귀 테스트와 `bootJar` 검증은 별도로 실행 가능하다.
+
 | 변수 | 기본값 | 설명 |
 | --- | --- | --- |
 | `APP_JWT_SECRET` | 로컬 전용 값 | **운영에서는 반드시 지정** (32바이트 이상) |

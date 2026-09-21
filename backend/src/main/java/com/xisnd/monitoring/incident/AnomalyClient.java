@@ -17,10 +17,10 @@ public class AnomalyClient {
 
     public AnomalyClient(AnalysisServiceProperties properties) {
         this.properties = properties;
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory factory = com.xisnd.monitoring.config.AnalysisAuthentication.requestFactory();
         factory.setConnectTimeout(2000);
         factory.setReadTimeout(5000);
-        this.restTemplate = new RestTemplate(factory);
+        this.restTemplate = com.xisnd.monitoring.config.AnalysisAuthentication.configure(new RestTemplate(factory), properties);
     }
 
     public List<Anomaly> detect(List<Series> series) {

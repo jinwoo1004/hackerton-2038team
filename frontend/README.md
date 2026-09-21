@@ -21,6 +21,14 @@ npm run type-check
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
+## Vercel 배포 (52g Studio / g-20)
+
+기존 `g-20` 프로젝트에 `jinwoo1004/hackerton-2038team` 저장소를 연결한다. Root Directory는 `frontend`, Framework는 Next.js다. **Include source files outside of the Root Directory in the Build Step**을 켜야 `prebuild`가 저장소의 `demo-fixtures`를 복사할 수 있다. 설치·빌드 명령은 `vercel.json`을 사용한다.
+
+Production과 Preview 모두 `NEXT_PUBLIC_API_BASE_URL`에 실제 배포한 Spring Boot 백엔드의 HTTPS origin을 지정한다(예시 형식: `https://api.example.com`). 값이 없거나 localhost/HTTP 주소이면 Vercel 빌드가 실패하며 브라우저 mock으로 배포하지 않는다. 이 변수는 공개 주소이므로 API key·JWT secret·OAuth 파일 경로를 넣으면 안 된다. 실제 AI 인증은 서버의 `APP_RUNTIME=deployed`, `LLM_PROVIDER=openai_api` 설정에서만 처리한다.
+
+백엔드 CORS 허용 목록에는 실제 Vercel 도메인을 명시한다. 임의 preview 도메인을 와일드카드로 허용하지 않으며, 승인한 preview origin을 서버에 추가한 뒤 확인한다. 큰 파일은 브라우저에서 백엔드로 직접 업로드하여 Vercel Function의 요청 본문 제한을 거치지 않는다. 제공 서버의 배포 명령과 환경변수는 [전체 배포 안내](../docs/DEPLOYMENT.md)를 참고한다.
+
 ## 구조
 
 ```

@@ -20,6 +20,8 @@ public class MonitoringApplication {
             System.exit(error.code().exitCode());
             return;
         }
-        SpringApplication.run(MonitoringApplication.class, args);
+        SpringApplication application = new SpringApplication(MonitoringApplication.class);
+        application.addInitializers(new com.xisnd.monitoring.config.DeploymentConfiguration());
+        application.run(args);
     }
 }

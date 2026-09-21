@@ -28,6 +28,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsProperties corsProperties;
     private final ObjectMapper objectMapper;
+    private final com.xisnd.monitoring.llm.LlmSettings llmSettings;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -40,12 +41,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
+                    auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/health", "/actuator/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/ingest/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/actuator/**").denyAll();
+                    if ("deployed".equals(llmSettings.runtime())) auth.requestMatchers("/h2-console/**").denyAll();
+                    else auth.requestMatchers("/h2-console/**").permitAll();
+                    auth.anyRequest().authenticated();
+                })
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // H2 콘솔용
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());

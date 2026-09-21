@@ -1,0 +1,37 @@
+{
+  "verifiedAt": "2026-09-21T23:00:29.837117+09:00",
+  "status": "STATIC_PASS_ONLY",
+  "dockerAvailable": false,
+  "modelHttpRequests": 0,
+  "schemaSource": "https://raw.githubusercontent.com/compose-spec/compose-spec/main/schema/compose-spec.json",
+  "schemaSHA256": "d61cc3df8c6e6a727043e84f3405c69ffd63d341f629db8480f1d2ee5405b10c",
+  "checks": [
+    "official Compose schema: base, TLS override, merged",
+    "private analysis/mysql without host ports",
+    "loopback-only backend and TLS80/443 override",
+    "UID10001 shared volume rw/ro",
+    "explicit deployed/openai_api and required shared secret",
+    "no Codex environment in containers",
+    "root-context Dockerfile paths",
+    "credential/cache/Agent artifacts dockerignore exclusions",
+    "bash -n deploy/up.sh",
+    "3 startup guards: missing/relative/in-checkout env rejected before Docker invocation"
+  ],
+  "fileSHA256": {
+    "deploy/compose.yml": "f01898812da8027f7b9cd5a600ef77ffe356c5e0c250a538f7da2bc9c1c8f9f3",
+    "deploy/compose.tls.yml": "6282120e06b13504cf5c8d6288bbb15fe087ba1811117cbdffa46b7a9085344a",
+    "deploy/Caddyfile": "0be3a57436b01d65f6369b31fa58c05dbf2b5e3f34bb7989bd3379b85ada6f44",
+    "deploy/up.sh": "86ed1cf24017e42a1f707ede9abcc4ab79c6344f076410401cd1ccb7a3faea2d",
+    ".dockerignore": "9f947fb0027808de9f0e9c38f84aab74b5fcbdc762698b7ab78867a8d0ac5e6a"
+  },
+  "notRun": [
+    "Docker image build",
+    "docker compose config/up",
+    "container health",
+    "DNS/TLS",
+    "MySQL persistence",
+    "volume UID ownership",
+    "backup/restore",
+    "live AI request"
+  ]
+}

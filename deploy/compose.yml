@@ -1,0 +1,105 @@
+name: monitoring-2038
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: monitoring
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in the external deployment env file}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the external deployment env file}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the external deployment env file}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks: [private]
+    healthcheck:
+      test: [CMD, mysqladmin, ping, -h, 127.0.0.1, --silent]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+  analysis:
+    image: monitoring-2038-analysis:${DEPLOY_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: service/Dockerfile
+    user: '10001:10001'
+    init: true
+    restart: unless-stopped
+    deploy: {replicas: 1}
+    environment:
+      APP_RUNTIME: deployed
+      STORAGE_LOCATION: /data/storage
+      ANALYSIS_SHARED_SECRET: ${APP_ANALYSIS_SHARED_SECRET:?Set one shared analysis secret}
+    volumes:
+      - shared-storage:/data/storage:ro
+    networks: [private]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+  backend:
+    image: monitoring-2038-backend:${DEPLOY_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    user: '10001:10001'
+    init: true
+    restart: unless-stopped
+    deploy: {replicas: 1}
+    stop_grace_period: 40s
+    environment:
+      SPRING_PROFILES_ACTIVE: deployed
+      APP_RUNTIME: deployed
+      LLM_PROVIDER: openai_api
+      OPENAI_MODEL: ${OPENAI_MODEL:?Explicitly select the deployed OpenAI model}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Supply the deployed OpenAI API secret}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      DB_URL: jdbc:mysql://mysql:3306/monitoring?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?Supply a unique strong JWT secret}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:?Set exact HTTPS frontend origins}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:?Set the public HTTPS frontend URL}
+      APP_STORAGE_LOCATION: /data/storage
+      APP_ANALYSIS_BASE_URL: http://analysis:8000
+      APP_ANALYSIS_SHARED_SECRET: ${APP_ANALYSIS_SHARED_SECRET:?Set one shared analysis secret}
+    volumes:
+      - shared-storage:/data/storage
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-8080}:8080'
+    networks: [private, public]
+    depends_on:
+      mysql: {condition: service_healthy}
+      analysis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:8080/api/health]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+volumes:
+  mysql-data:
+  shared-storage:
+
+networks:
+  private: {internal: true}
+  public:

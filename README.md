@@ -15,6 +15,8 @@ Spring Boot 가 전체 오케스트레이터 역할을 한다.
 
 ## 해커톤 원클릭 실행
 
+실제 공개 배포는 [Vercel g-20 + 서버 배포 안내](docs/DEPLOYMENT.md)를 따른다. 프런트엔드는 52g Studio의 기존 `g-20` 프로젝트, Spring Boot와 FastAPI는 영속 DB·공유 저장소가 있는 서버에서 실행한다. Vercel 빌드에는 실제 백엔드의 `NEXT_PUBLIC_API_BASE_URL`이 필요하며, 배포 서버의 AI는 `deployed/openai_api`로만 연결한다.
+
 Windows에서 PowerShell 7.4 이상, Node.js, JDK 17, .NET 8 SDK를 준비하고 OUT 루트에서 실행한다. Python 3.11과 프로젝트 의존성은 준비 단계에서 설치한다.
 
 ```powershell
@@ -85,7 +87,7 @@ MySQL은 DB 환경변수를 공급하고 `mysql` 프로파일로 실행한다. �
 
 ```powershell
 cd agent
-powershell -ExecutionPolicy Bypass -File installer/pack-agent.ps1   # dist\MonitoringAgentSetup.exe
+pwsh -NoProfile -File installer/pack-agent.ps1   # dist\MonitoringAgentSetup.exe
 ```
 
 자세한 내용은 [agent/README.md](agent/README.md).

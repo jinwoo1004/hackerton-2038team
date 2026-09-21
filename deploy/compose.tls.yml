@@ -1,0 +1,23 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST:?Set the real backend DNS hostname before enabling TLS}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [public]
+    depends_on:
+      backend: {condition: service_healthy}
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+volumes:
+  caddy-data:
+  caddy-config:

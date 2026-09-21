@@ -34,7 +34,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next-demo-full/types/**/*.ts",
-    ".next-demo-frontend/types/**/*.ts"
+    ".next-demo-frontend/types/**/*.ts",
+    ".next-vercel-check/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

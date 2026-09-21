@@ -1,22 +1,45 @@
-# Defense in depth for any future deployment build context.
-# The application currently deploys as a Spring Boot JAR, not a Codex proxy.
+# Root build context for backend/Dockerfile and service/Dockerfile.
+# Dockerfile COPY allowlists are the primary boundary; keep local/private artifacts out too.
 .git
 .codex
 **/.codex
+**/.git
 **/auth.json
 **/*.auth.json
+**/*credential*.json
+**/*oauth*.json
+**/*secret*.json
 **/.env
 **/.env.*
 !**/.env.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
 .demo
 .work
 .tools
+agent/dist
+agent/.package-build-*
+frontend
+docs/evidence
 **/node_modules
 **/.next*
 **/.venv
 **/.gradle
+**/.cache
+**/__pycache__
+**/.pytest_cache
+**/bin
+**/obj
+backend/build
 **/data
 **/storage
+**/logs
 **/*.log
+**/*.db
+**/*.mv.db
+**/*.trace.db
+**/*.zip
 **/application-local.yml
 **/application-secrets.yml

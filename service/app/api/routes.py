@@ -16,16 +16,22 @@ engine = AnalysisEngine()
 def rule_documents(request: AnalysisRequest) -> dict:
     documents = []
     for path in request.ruleFiles:
-        text, note = extract_text(_resolve(path))
+        try:
+            resolved = _resolve(path)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Requested file is outside analysis storage") from None
+        text, note = extract_text(resolved)
         documents.append({"name": request.fileNames.get(path, path.rsplit("/", 1)[-1]),
                           "text": (text or "")[:60000], "parsed": text is not None, "note": note})
     return {"documents": documents}
 
 
-@router.get("/health", response_model=HealthResponse, tags=["health"])
-def health() -> HealthResponse:
+@router.get("/health", tags=["health"])
+def health() -> dict:
     settings = get_settings()
-    return HealthResponse(status="UP", service=settings.app_name, version=settings.version)
+    if settings.app_runtime == "deployed":
+        return {"status": "UP"}
+    return {"status": "UP", "service": settings.app_name, "version": settings.version}
 
 
 @router.post("/analysis", response_model=AnalysisResponse, tags=["analysis"])

@@ -11,9 +11,10 @@ public class RestClientConfig {
 
     @Bean
     public RestTemplate analysisRestTemplate(RestTemplateBuilder builder, AnalysisServiceProperties properties) {
-        return builder
+        return AnalysisAuthentication.configure(builder
+                .requestFactory(AnalysisAuthentication::requestFactory)
                 .setConnectTimeout(Duration.ofSeconds(5))
                 .setReadTimeout(Duration.ofSeconds(properties.timeoutSeconds()))
-                .build();
+                .build(), properties);
     }
 }

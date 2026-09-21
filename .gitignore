@@ -3,6 +3,7 @@
 /frontend/.next/
 /frontend/.next-demo-full/
 /frontend/.next-demo-frontend/
+/frontend/.next-vercel-check/
 /frontend/out/
 /frontend/.turbo/
 /frontend/tsconfig.tsbuildinfo
@@ -70,6 +71,7 @@ Thumbs.db
 auth.json
 *.auth.json
 .codex/
+.vercel/
 codex-login.log
 .env.*
 !.env.example

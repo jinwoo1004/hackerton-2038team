@@ -16,3 +16,8 @@
 /demo-fixtures/*.log text eol=lf
 /demo-fixtures/source/*.ts text eol=lf
 agent/dist/MonitoringAgentSetup.exe filter=lfs diff=lfs merge=lfs -text
+
+# Linux deployment entrypoints must survive Windows checkout.
+/deploy/*.sh text eol=lf
+/backend/Dockerfile text eol=lf
+/service/Dockerfile text eol=lf
