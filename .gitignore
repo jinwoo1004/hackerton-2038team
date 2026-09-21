@@ -1,0 +1,63 @@
+# Frontend
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/.turbo/
+/frontend/tsconfig.tsbuildinfo
+# 백엔드 주소 등 개인 환경값 (.env.local.example 은 추적)
+/frontend/.env*.local
+/frontend/npm-debug.log*
+/frontend/pnpm-lock.yaml
+/frontend/yarn.lock
+
+# Backend
+/backend/.gradle/
+/backend/build/
+/backend/bin/
+# 로컬 H2 데이터베이스 파일
+/backend/data/
+# 업로드된 규칙 문서, 소스 ZIP, 로그
+/backend/storage/
+/backend/.local-secrets.yml
+*.iml
+
+# Analysis Service (Python / FastAPI)
+/service/.venv/
+/service/venv/
+/service/.env
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Agent (C# / .NET)
+/agent/**/bin/
+/agent/**/obj/
+/agent/.vs/
+*.user
+# pack-agent.ps1 이 만드는 설치 파일과 중간 산출물
+/agent/dist/
+/agent/publish-worker/
+/agent/publish-app/
+/agent/src/MonitoringAgent.App/Resources/
+
+# IDE / OS
+/.idea/
+/backend/.idea/
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Never publish machine-specific credentials
+/backend/src/main/resources/application-local.yml
+/backend/src/main/resources/application-secrets.yml
+.env
+.env.local
+.local-secrets*
+.demo/
+

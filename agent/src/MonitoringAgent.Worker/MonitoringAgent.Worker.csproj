@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <AssemblyName>MonitoringAgentService</AssemblyName>
+    <RootNamespace>MonitoringAgent.Worker</RootNamespace>
+
+    <Product>Monitoring Agent</Product>
+    <Company>XI S&amp;D</Company>
+    <Authors>2038 TEAM</Authors>
+    <Description>Monitoring Agent - 로그와 서버 자원 수집 서비스</Description>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+
+    <ApplicationIcon>..\..\installer\Assets\logo_app.ico</ApplicationIcon>
+    <UserSecretsId>monitoring-agent-worker</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MonitoringAgent.Tests" />
+  </ItemGroup>
+
+</Project>

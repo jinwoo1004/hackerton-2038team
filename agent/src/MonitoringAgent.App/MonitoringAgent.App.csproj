@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <AssemblyName>MonitoringAgentApp</AssemblyName>
+    <RootNamespace>MonitoringAgent.App</RootNamespace>
+    <Product>Monitoring Agent</Product>
+    <Company>XI S&amp;D</Company>
+    <Authors>2038 TEAM</Authors>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+
+    <ApplicationIcon>..\..\installer\Assets\logo_app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonitoringAgent.Worker\MonitoringAgent.Worker.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\logo_app.png" />
+    <Resource Include="Assets\flag_kr.png" />
+    <Resource Include="Assets\flag_jp.png" />
+    <Resource Include="Assets\flag_us.png" />
+    <EmbeddedResource Include="Assets\logo_app.ico">
+      <LogicalName>logo_app.ico</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('Resources\worker\MonitoringAgentService.exe')">
+    <EmbeddedResource Include="Resources\worker\MonitoringAgentService.exe">
+      <LogicalName>MonitoringAgentService.exe</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+# 테스트용 메모리 DB
+spring:
+  datasource:
+    url: jdbc:h2:mem:monitoring-test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+app:
+  jwt:
+    secret: test-only-secret-key-with-enough-length-0123456789
+    expiration-minutes: 60
+  storage:
+    location: ./build/test-storage
+  analysis-service:
+    enabled: false
+  scheduling:
+    enabled: false
+  detection:
+    statistical: false
+  alerts:
+    async: false
+    slack-allowed-prefixes:
+      - https://hooks.slack.com/services/
+      - "http://127.0.0.1:"
