@@ -1,0 +1,62 @@
+{
+  "checkedAt": "2026-09-21T12:47:30.458486+00:00",
+  "verifier": "session-monitor",
+  "installerExecuted": false,
+  "serviceInstalledOrChanged": false,
+  "applicationRestarted": false,
+  "artifact": {
+    "name": "MonitoringAgentSetup.exe",
+    "bytes": 113920203,
+    "sha256": "1b6a45d81696325926f34359d754f25fccca411b53bfa272693ffa9af32f9763",
+    "machine": "AMD64",
+    "pe": "PE32+",
+    "checksumManifest": "MATCH",
+    "fileVersion": "1.0.0.0",
+    "productVersion": "1.0.0+42bffa80e1bb28d90d9cdf2a6e561c0a2843562d",
+    "productName": "Monitoring Agent",
+    "company": "XI S&D",
+    "originalFilename": "MonitoringAgentApp.dll",
+    "authenticode": "NotSigned"
+  },
+  "staticReview": {
+    "sourceAndRawArtifactFilesScanned": 36,
+    "credentialPatternMatches": [],
+    "workerDefaultSettingsSections": [
+      "Serilog"
+    ],
+    "serverAndTokenDefaults": "EMPTY",
+    "publishedFiles": [
+      "MonitoringAgentSetup.exe",
+      "README.md",
+      "SHA256SUMS"
+    ],
+    "packagingRecipe": "Only self-contained Worker and WPF application outputs are copied; private configuration names rejected before dist copy.",
+    "limitations": "Source/publish-recipe review and raw UTF8/UTF16 literal scan; not a proof against every encoding or compressed payload. Embedded Worker verification is attributed separately to the build owner."
+  },
+  "api": {
+    "base": "http://localhost:18080",
+    "unauthorizedStatuses": {
+      "/api/agent-installer": 401,
+      "/api/agent-installer/download": 401
+    },
+    "authenticatedInfo": {
+      "available": true,
+      "fileName": "MonitoringAgentSetup.exe",
+      "sizeBytes": 113920203,
+      "updatedAt": "2026-09-21T21:40:04.3149713"
+    },
+    "downloadStatus": 200,
+    "downloadBytes": 113920203,
+    "downloadSha256": "1b6a45d81696325926f34359d754f25fccca411b53bfa272693ffa9af32f9763",
+    "contentType": "application/octet-stream",
+    "contentDisposition": "attachment; filename=\"MonitoringAgentSetup.exe\"",
+    "distHashMatch": true,
+    "downloadSavedToDisk": false,
+    "tokenLoggedOrSaved": false
+  },
+  "buildOwnerEvidence": {
+    "agentTests": "27 PASS reported by runtime_manager; not independently rerun for this artifact-only change.",
+    "embeddedWorker": "pack-agent.ps1 compares the SHA256 of manifest resource MonitoringAgentService.exe with the published Worker; reported PASS by runtime_manager. Installer entry point was not executed."
+  },
+  "result": "PASS"
+}

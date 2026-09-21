@@ -9,9 +9,10 @@
 *.png binary
 *.ico binary
 *.jar binary
-
+*.exe binary
 # Keep deterministic fixture hashes and generated source ZIP stable after checkout.
 /demo-fixtures/*.md text eol=lf
 /demo-fixtures/*.json text eol=lf
 /demo-fixtures/*.log text eol=lf
 /demo-fixtures/source/*.ts text eol=lf
+agent/dist/MonitoringAgentSetup.exe filter=lfs diff=lfs merge=lfs -text

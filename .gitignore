@@ -37,8 +37,8 @@ __pycache__/
 /agent/**/obj/
 /agent/.vs/
 *.user
-# pack-agent.ps1 이 만드는 설치 파일과 중간 산출물
-/agent/dist/
+# Release artifacts under agent/dist are versioned; ignore only packaging intermediates.
+/agent/.package-build-*/
 /agent/publish-worker/
 /agent/publish-app/
 /agent/src/MonitoringAgent.App/Resources/

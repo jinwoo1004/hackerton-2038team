@@ -23,11 +23,25 @@ C# · .NET 8 · WPF(설치/트레이 화면) · Worker Service(Windows 서비스
 
 ## 빌드
 
+미리 빌드한 설치 파일은 [dist](dist/README.md)에 포함하며 Git LFS로 관리한다. 복제한 저장소에서 `git lfs pull --include="agent/dist/MonitoringAgentSetup.exe"`을 실행하면 실제 EXE를 받는다.
+
+Windows x64와 .NET 8 SDK, PowerShell 7 이상이 필요하다. `agent` 폴더에서 실행한다.
+
 ```powershell
 dotnet build MonitoringAgent.sln
 dotnet test tests/MonitoringAgent.Tests/MonitoringAgent.Tests.csproj
-powershell -ExecutionPolicy Bypass -File installer/pack-agent.ps1   # dist\MonitoringAgentSetup.exe
+pwsh -NoProfile -File installer/pack-agent.ps1
+Get-FileHash -Algorithm SHA256 -LiteralPath dist/MonitoringAgentSetup.exe
 ```
+
+패키징 명령은 테스트 후 `win-x64` self-contained 단일 EXE를 생성한다. 대상 PC에 .NET을 별도로 설치할 필요가 없다.
+결과는 `dist/MonitoringAgentSetup.exe`, 검증 해시는 `dist/SHA256SUMS`다. 기본 산출물에는 코드 서명이 없다.
+Worker EXE를 설치기의 내장 리소스로 넣고 SHA256 일치를 확인한다. 빌드 중 설치기나 서비스를 실행하지 않는다.
+키·OAuth 인증·실제 서버 주소와 Agent 토큰은 패키지에 넣지 않으며 설치 화면에서 별도로 설정한다.
+
+실행 중인 개발 Agent의 `bin/obj`를 덮어쓰지 않도록 .NET의 `--artifacts-path`로 빌드 출력을 분리한다.
+임시 출력은 `agent/.package-build-<임의 ID>` 안에만 만들고, 절대경로와 junction/symlink를 확인한 뒤 정리한다.
+기존 Worker 내장 리소스가 있으면 원래 파일을 복원한다. `-OutDir`은 `agent/dist` 또는 그 하위만 허용한다.
 
 백엔드는 `app.agent.installer-path`(기본 `../agent/dist/MonitoringAgentSetup.exe`)에 파일이 있으면
 프로젝트 > 에이전트 탭에 "설치 파일 받기" 버튼을 보여준다.
