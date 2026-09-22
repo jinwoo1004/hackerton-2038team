@@ -50,7 +50,7 @@ export default function ServicesSettingsPage() {
         icon={Link2}
         tone="green"
         title="서비스 연결 상태"
-        description="화면은 백엔드만 호출하고, 분석은 백엔드가 분석 서비스에 맡깁니다."
+        description={USE_MOCK ? "시연용 연결 상태입니다. 파일 처리와 설정 변경은 이 브라우저 안에서만 이루어집니다." : "화면은 백엔드만 호출하고, 분석은 백엔드가 분석 서비스에 맡깁니다."}
         action={
           <button
             type="button"
@@ -63,7 +63,7 @@ export default function ServicesSettingsPage() {
         }
       >
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line px-4 py-3 text-[13px]">
-          <span className="font-semibold text-ink-500">백엔드 주소</span>
+          <span className="font-semibold text-ink-500">{USE_MOCK ? "시연 데이터 저장 위치" : "백엔드 주소"}</span>
           <span className="break-all font-mono text-ink-900">{USE_MOCK ? "브라우저 저장소" : API_BASE_URL}</span>
           {status && <span className="ml-auto text-[12px] tabular-nums text-ink-400">확인 {formatDateTime(status.checkedAt)}</span>}
         </div>

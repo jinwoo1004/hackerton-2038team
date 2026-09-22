@@ -168,12 +168,19 @@ export default function MonitoringPage() {
       const buckets = new Map<number, { sum: number; n: number }>();
       for (const res of metrics.values()) {
         for (const s of res.series) {
+          // Different agents arrive milliseconds apart; keep one latest sample per time bucket.
+          const samples = new Map<number, { time: number; value: number }>();
           for (const p of s.points) {
             const v = p[m.key];
             if (v == null) continue;
-            const t = Date.parse(p.time);
+            const time = Date.parse(p.time);
+            if (!Number.isFinite(time)) continue;
+            const t = Math.floor(time / (bucketSeconds * 1000)) * bucketSeconds * 1000;
+            if ((samples.get(t)?.time ?? -Infinity) <= time) samples.set(t, { time, value: v });
+          }
+          for (const [t, sample] of samples) {
             const b = buckets.get(t) ?? { sum: 0, n: 0 };
-            b.sum += v;
+            b.sum += sample.value;
             b.n += 1;
             buckets.set(t, b);
           }
@@ -184,7 +191,7 @@ export default function MonitoringPage() {
         .map(([t, b]) => ({ t, v: b.sum / b.n }));
     }
     return result;
-  }, [metrics]);
+  }, [metrics, bucketSeconds]);
 
   function refresh() {
     load(true);
@@ -200,7 +207,7 @@ export default function MonitoringPage() {
             <Skeleton key={i} className="h-[112px] rounded-2xl" />
           ))}
         </div>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
           <Skeleton className="h-[340px] rounded-2xl" />
           <Skeleton className="h-[340px] rounded-2xl" />
         </div>
@@ -213,6 +220,8 @@ export default function MonitoringPage() {
   }
 
   const agents = overview.projects.flatMap((p) => p.agents.map((a) => ({ agent: a, project: p })));
+  const responseSeries = Array.from(metrics.values()).flatMap((r) => r.series.slice(0, 1))
+    .filter((s) => s.points.some((p) => p.responseMs != null));
 
   return (
     <div className="space-y-5">
@@ -221,7 +230,7 @@ export default function MonitoringPage() {
       <LiveHealthSummary />
       <StatCards overview={overview} aggregated={aggregated} start={start} end={end} />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <TrendCard
           aggregated={aggregated}
           range={range}
@@ -233,6 +242,8 @@ export default function MonitoringPage() {
         />
         <EventsCard events={events} />
       </div>
+
+      {responseSeries.length > 0 && <MetricChart title="단지별 월패드 응답시간" metric="responseMs" series={responseSeries} order={responseSeries.map((s) => s.agentId)} minutes={range} bucketSeconds={bucketSeconds} now={end} />}
 
       <ServerList agents={agents} metrics={metrics} range={range} end={end} />
 
@@ -419,8 +430,8 @@ function TrendCard({
   const series: UsageSeries[] = METRICS.map((m) => ({ key: m.key, label: m.label, color: m.color, points: aggregated[m.key] }));
 
   return (
-    <Card className="flex flex-col p-5">
-      <div className="flex items-start justify-between gap-3">
+    <Card className="flex min-w-0 flex-col p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-[16px] font-bold text-ink-900">주요 지표 추이</h2>
           <p className="mt-1 text-[12.5px] text-ink-400 [word-break:keep-all]">연결된 서버 전체의 평균 사용률입니다.</p>

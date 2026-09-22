@@ -1,4 +1,25 @@
-# Vercel 프런트엔드 + 별도 서버 배포
+# Vercel 시연 배포와 전체 서비스 배포
+
+## 현재 요청: 프런트엔드만 배포
+
+이제 기본값은 **백엔드 없는 목업 시연**이다. Vercel `g-20`에 아래 값으로 배포하면 된다.
+
+| 항목 | 값 |
+| --- | --- |
+| Git / Branch | `jinwoo1004/hackerton-2038team` / `main` |
+| Root Directory | `frontend` |
+| Application Preset | Next.js |
+| Install / Build | `npm ci` / `npm run build` |
+| Output Directory | Next.js 기본값 |
+| 환경변수 | `NEXT_PUBLIC_DATA_MODE=mock` (기본값이므로 생략 가능) |
+
+**Include source files outside of the Root Directory in the Build Step**을 켠다. 합성 시연 파일을 저장소의 `demo-fixtures`에서 복사하기 때문이다. Production/Preview 모두 mock으로 설정한다. `NEXT_PUBLIC_API_BASE_URL`은 필요 없으며 mock 모드에서는 기존 값이 남아 있어도 사용하지 않는다. API key, OAuth 파일, DB, 백엔드 서버를 준비할 필요가 없다.
+
+배포 후 **데모 둘러보기 → 대시보드 → 프로젝트 → 모니터링 → 장애 트리거/복구 → 분석 결과** 순서로 확인한다. 운영 수치와 AI 설명은 합성 데이터이며 상단 DEMO 표시를 유지한다. 변경 사항은 방문자별 브라우저 저장소에만 저장된다. 첨부한 실제 소스 ZIP·운영 로그·규격 문서는 공개 정적 파일로 복사하지 않는다.
+
+## 선택 사항: 실제 서버를 연결하는 전체 서비스 배포
+
+아래 절차는 `NEXT_PUBLIC_DATA_MODE=api`로 실제 서버 연결을 선택한 경우에만 적용한다. 현재 목업 시연 배포에는 필요하지 않다.
 
 배포 구성은 Vercel의 Next.js 프런트엔드와 별도 Linux 서버의 Spring Boot·FastAPI·MySQL이다. 지정된 Vercel 로그인은 `hackathon01@52g.team`, workspace는 `52g Studio`(Enterprise), 프로젝트는 `g-20`, Git 저장소는 `jinwoo1004/hackerton-2038team`이다.
 

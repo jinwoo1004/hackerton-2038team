@@ -37,14 +37,15 @@ import { analyzeUploads } from "./analyzer";
 import { parseUpload, readParsedFile, saveParsedFile, deleteParsedFiles, type ParsedUpload } from "./documentParser";
 import { DEMO_CODE, localInsight, seededMetrics, slackMessage, type DemoScenario } from "./demoData";
 import type { LogQuery } from "../agentApi";
+import { ensureShowcase, refreshShowcase, materializeShowcaseAnalysis, showcaseMetrics, showcaseHealth, MOCK_STORAGE_KEY, LEGACY_MOCK_STORAGE_KEY, SHOWCASE_PROJECTS, type ShowcaseState } from "./showcaseData";
 
-const KEY = "mp.mockdb";
+const KEY = MOCK_STORAGE_KEY;
 
 interface MockUser extends User {
   password: string;
 }
 
-interface MockDb {
+export interface MockDb {
   seq: number;
   users: MockUser[];
   projects: Project[];
@@ -52,12 +53,13 @@ interface MockDb {
   analyses: Analysis[];
   events?: ActivityEvent[];
   agents?: Agent[];
-  alertChannels?: (AlertChannel & { url: string })[];
-  alertRules?: AlertRule[];
+  alertChannels?: (AlertChannel & { url: string; createdBy?: number })[];
+  alertRules?: (AlertRule & { createdBy?: number })[];
   deliveries?: AlertDelivery[];
   incidents?: Incident[];
   logs?: LogEntry[];
   demoAnchors?: Record<number, string>;
+  showcase?: ShowcaseState;
 }
 
 function emptyDb(): MockDb {
@@ -83,37 +85,39 @@ function emptyDb(): MockDb {
 
 function read(): MockDb {
   if (typeof window === "undefined") return emptyDb();
-  const raw = window.localStorage.getItem(KEY);
-  if (!raw) {
-    const db = emptyDb();
-    window.localStorage.setItem(KEY, JSON.stringify(db));
-    return db;
-  }
-  try {
-    const db = JSON.parse(raw) as MockDb;
-    let changed = false;
-    for (const analysis of db.analyses) {
-      if (analysis.status === "COMPLETED" && !analysis.result?.source.available && !analysis.result?.logs.available) {
-        analysis.status = "FAILED";
-        analysis.score = null;
-        analysis.grade = null;
-        analysis.result = null;
-        analysis.summary = "이전 목 분석에는 실제 입력 근거가 없습니다. 파일을 다시 올린 뒤 분석해주세요.";
-        changed = true;
-      }
+  const raw = window.localStorage.getItem(KEY) ?? window.localStorage.getItem(LEGACY_MOCK_STORAGE_KEY);
+  let db = emptyDb();
+  if (raw) {
+    try {
+      const stored = JSON.parse(raw) as MockDb;
+      if (!Array.isArray(stored.users) || !Array.isArray(stored.projects) || !Array.isArray(stored.files) || !Array.isArray(stored.analyses) || !Number.isFinite(stored.seq)) throw new Error("Invalid saved database");
+      db = stored;
+    } catch {
+      // Preserve unreadable saved data rather than silently replacing it with an empty DB.
+      throw new Error("저장된 데모 데이터를 읽을 수 없습니다. 기존 데이터를 보존했으며, 새 브라우저 프로필에서 시연을 시작할 수 있습니다.");
     }
-    if (changed) window.localStorage.setItem(KEY, JSON.stringify(db));
-    return db;
-  } catch {
-    const db = emptyDb();
-    window.localStorage.setItem(KEY, JSON.stringify(db));
-    return db;
   }
+  let changed = !window.localStorage.getItem(KEY);
+  for (const analysis of db.analyses) {
+    if (analysis.status === "COMPLETED" && !db.showcase?.analyses[analysis.id] && !analysis.result?.source.available && !analysis.result?.logs.available) {
+      analysis.status = "FAILED";
+      analysis.score = null;
+      analysis.grade = null;
+      analysis.result = null;
+      analysis.summary = "이전 목 분석에는 실제 입력 근거가 없습니다. 파일을 다시 올린 뒤 분석해주세요.";
+      changed = true;
+    }
+  }
+  changed = ensureShowcase(db, currentUserId(), Date.now()) || changed;
+  changed = refreshShowcase(db, Date.now()) || changed;
+  if (changed) write(db);
+  return db;
 }
 
 function write(db: MockDb) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(db));
+  try { window.localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch { throw new Error("브라우저 저장 공간이 부족합니다. 이전 데이터는 보존되었습니다. 새 브라우저 프로필에서 시연을 시작해주세요."); }
 }
 
 function currentUserId(): number {
@@ -269,7 +273,7 @@ export const mockApi = {
 
   async createProject(body: ProjectCreateRequest): Promise<Project> {
     const db = read();
-    if (db.projects.some((p) => p.projectCode.toUpperCase() === body.projectCode.toUpperCase())) {
+    if (ownedProjects(db).some((p) => p.projectCode.toUpperCase() === body.projectCode.toUpperCase())) {
       throw new Error("이미 사용 중인 프로젝트 코드입니다.");
     }
     const now = new Date().toISOString();
@@ -320,7 +324,7 @@ export const mockApi = {
 
   async checkCode(code: string): Promise<boolean> {
     const db = read();
-    return delay(!db.projects.some((p) => p.projectCode.toUpperCase() === code.toUpperCase()), 260);
+    return delay(!ownedProjects(db).some((p) => p.projectCode.toUpperCase() === code.toUpperCase()), 260);
   },
 
   async listFiles(projectId: number): Promise<ProjectFile[]> {
@@ -367,7 +371,7 @@ export const mockApi = {
     const before = read();
     ownedProject(before, projectId);
     const projectFiles = before.files.filter((f) => f.projectId === projectId);
-    const parsed = await Promise.all(projectFiles.map((f) => readParsedFile(f.id)));
+    const parsed = await Promise.all(projectFiles.filter((f) => f.fileType !== "ETC").map((f) => before.showcase?.files[f.id] ?? readParsedFile(f.id)));
     if (parsed.some((p) => !p)) throw new Error("일부 파일의 실제 내용이 저장되어 있지 않습니다. 해당 파일을 다시 업로드해주세요.");
     const result = analyzeUploads(parsed.filter((p): p is ParsedUpload => !!p));
     const db = read();
@@ -398,7 +402,7 @@ export const mockApi = {
     const db = settleAnalyses(read());
     ownedProject(db, projectId);
     const list = db.analyses.filter((a) => a.projectId === projectId);
-    return delay(list.length ? list[list.length - 1] : null, 200);
+    return delay(list.length ? materializeShowcaseAnalysis(db, list[list.length - 1]) : null, 200);
   },
 
   async analysis(projectId: number, analysisId: number): Promise<Analysis> {
@@ -406,7 +410,7 @@ export const mockApi = {
     ownedProject(db, projectId);
     const found = db.analyses.find((a) => a.id === analysisId && a.projectId === projectId);
     if (!found) throw new Error("분석을 찾을 수 없습니다.");
-    return delay(found, 200);
+    return delay(materializeShowcaseAnalysis(db, found), 200);
   },
 
   async analysisHistory(projectId: number): Promise<Analysis[]> {
@@ -469,6 +473,7 @@ export const mockApi = {
     });
     const scored = health.filter((h) => h.score != null);
     return delay({
+      ...showcaseHealth(projects, all.incidents ?? [], Date.now()),
       projects: { total: db.projects.length, ready: count("READY"), analyzing: count("ANALYZING"), active: count("ACTIVE"), error: count("ERROR") },
       fileCount: db.files.length,
       analyses: {
@@ -508,6 +513,7 @@ export const mockApi = {
 
   async events(params: EventFilter & { level?: EventLevel; sort?: "asc" | "desc"; page?: number; size?: number }): Promise<EventPage> {
     const db = settleAnalyses(read());
+    if (params.projectId) ownedProject(db, params.projectId);
     const size = params.size ?? 30;
     const page = params.page ?? 0;
     const all = filterEvents(ownedEvents(db), params).filter((e) => !params.level || e.level === params.level);
@@ -523,6 +529,7 @@ export const mockApi = {
 
   async eventSummary(params: EventFilter): Promise<EventSummary> {
     const db = read();
+    if (params.projectId) ownedProject(db, params.projectId);
     const list = filterEvents(ownedEvents(db), params);
     const scoped = ownedEvents(db).filter((e) => !params.projectId || e.projectId === params.projectId);
     const age = (e: ActivityEvent) => Date.now() - Date.parse(e.createdAt);
@@ -603,8 +610,17 @@ export const mockApi = {
   async metrics(projectId: number, minutes: number, agentId?: number): Promise<MetricSeriesResponse> {
     const db = read();
     ownedProject(db, projectId);
+    const now = Date.now();
     const anchor = db.demoAnchors?.[projectId];
-    return delay({ minutes, bucketSeconds: 60, series: anchor ? (db.agents ?? []).filter((a) => a.projectId === projectId && a.state === "ONLINE" && (!agentId || a.id === agentId)).map((a) => ({ agentId: a.id, agentName: a.name, points: seededMetrics(anchor).filter((p) => Date.parse(p.time) >= Date.now() - minutes * 60_000) })) : [] }, 80);
+    const range = Math.max(1, Math.min(1440, Math.floor(minutes)));
+    const bucketSeconds = range > 360 ? 300 : range > 60 ? 120 : 60;
+    return delay({ minutes: range, bucketSeconds, series: (db.agents ?? []).filter((a) => a.projectId === projectId && a.state === "ONLINE" && (!agentId || a.id === agentId)).flatMap((a) => {
+      const seed = db.showcase?.agents[a.id];
+      const incidents = (db.incidents ?? []).filter((i) => i.projectId === projectId && (!i.agentId || i.agentId === a.id));
+      if (seed) return [{ agentId: a.id, agentName: a.name, points: showcaseMetrics(seed.profile, seed.ordinal, range, now, incidents) }];
+      // Legacy safe-demo agents also use a moving clock, so an overnight tab stays populated.
+      return anchor ? [{ agentId: a.id, agentName: a.name, points: seededMetrics(new Date(now).toISOString()) }] : [];
+    }) }, 80);
   },
 
   async monitoringOverview(): Promise<MonitoringOverview> {
@@ -615,6 +631,7 @@ export const mockApi = {
     const logs = (db.logs ?? []).filter((l) => agents.some((a) => a.id === l.agentId) && Date.parse(l.loggedAt) > Date.now() - 3600_000);
     const incidents = (db.incidents ?? []).filter((i) => ids.has(i.projectId) && i.status === "OPEN");
     return delay({
+      ...showcaseHealth(projects, db.incidents ?? [], Date.now()),
       agentsTotal: agents.length,
       agentsOnline: agents.filter((a) => a.state === "ONLINE").length,
       errors1h: logs.filter((l) => l.level === "ERROR" || l.level === "FATAL").length,
@@ -633,6 +650,7 @@ export const mockApi = {
 
   async incidents(params: { projectId?: number; status?: IncidentStatus; limit?: number } = {}): Promise<Incident[]> {
     const db = read();
+    if (params.projectId) ownedProject(db, params.projectId);
     const ids = new Set(ownedProjects(db).map((p) => p.id));
     return delay((db.incidents ?? []).filter((i) => ids.has(i.projectId) && (!params.projectId || i.projectId === params.projectId) && (!params.status || i.status === params.status)).slice().reverse().slice(0, params.limit ?? 50), 80);
   },
@@ -646,6 +664,9 @@ export const mockApi = {
       incident.status = "RESOLVED";
       incident.resolvedAt = new Date().toISOString();
       incident.resolvedBy = "USER";
+      for (const agent of (db.agents ?? []).filter((a) => a.projectId === project.id)) {
+        if (db.showcase?.agents[agent.id]) db.showcase.agents[agent.id].lastTick = new Date(Date.now() - 60_000).toISOString();
+      }
       pushEvent(db, project, "INCIDENT_RESOLVED", "INFO", "이상을 해결했습니다", incident.title);
       write(db);
     }
@@ -695,9 +716,17 @@ export const mockApi = {
 
   async resetDemo(): Promise<void> {
     const db = read();
-    const ids = new Set(ownedProjects(db).filter((p) => p.projectCode === DEMO_CODE).map((p) => p.id));
+    const state = db.showcase;
+    if (!state) return;
+    // Reset only authored gallery data. Projects with uploaded files or renamed titles
+    // are retained, together with every migrated project and another user's records.
+    const ids = new Set(ownedProjects(db).filter((p) => {
+      const seed = state.projects[p.id];
+      return !!seed && p.name === SHOWCASE_PROJECTS[seed.profile].name && p.nickname === "합성 시연" && !db.files.some((f) => f.projectId === p.id && !state.files[f.id]);
+    }).map((p) => p.id));
     const agentIds = new Set((db.agents ?? []).filter((a) => ids.has(a.projectId)).map((a) => a.id));
-    await deleteParsedFiles(db.files.filter((f) => ids.has(f.projectId)).map((f) => f.id));
+    const fileIds = db.files.filter((f) => ids.has(f.projectId)).map((f) => f.id);
+    await deleteParsedFiles(fileIds.filter((fileId) => !state.files[fileId]));
     db.projects = db.projects.filter((p) => !ids.has(p.id));
     db.files = db.files.filter((f) => !ids.has(f.projectId));
     db.analyses = db.analyses.filter((a) => !ids.has(a.projectId));
@@ -708,6 +737,12 @@ export const mockApi = {
     db.alertRules = (db.alertRules ?? []).filter((r) => !r.projectId || !ids.has(r.projectId));
     db.deliveries = (db.deliveries ?? []).filter((d) => !d.projectId || !ids.has(d.projectId));
     for (const id of ids) if (db.demoAnchors) delete db.demoAnchors[id];
+    for (const projectId of ids) delete state.projects[projectId];
+    for (const agentId of agentIds) delete state.agents[agentId];
+    for (const fileId of fileIds) delete state.files[fileId];
+    for (const key of Object.keys(state.analyses)) if (!db.analyses.some((a) => a.id === Number(key))) delete state.analyses[Number(key)];
+    delete state.owners[currentUserId()];
+    ensureShowcase(db, currentUserId(), Date.now());
     write(db);
   },
 
@@ -726,6 +761,7 @@ export const mockApi = {
     db.incidents = [...(db.incidents ?? []), incident];
     db.logs = [...(db.logs ?? []), ...Array.from({ length: insight.errorCount + insight.timeoutCount }, (_, index): LogEntry => ({ id: nextId(db), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: index < insight.timeoutCount ? "WARN" : "ERROR", message: index < insight.timeoutCount ? `[DEMO] gateway response Timeout; synthetic deadline exceeded durationMs=${insight.currentResponseMs}` : "[DEMO] copy format ERROR: invalid synthetic value; expected NN-NNNN", loggedAt: now }))];
     agent.lastSeenAt = now;
+    if (db.showcase?.agents[agent.id]) db.showcase.agents[agent.id].lastTick = new Date(Date.now() - 60_000).toISOString();
     pushEvent(db, project, "INCIDENT_OPENED", "ERROR", incident.title, incident.detail);
     write(db);
     return delay(incident, 80);
@@ -744,6 +780,7 @@ export const mockApi = {
     if (agent) {
       db.demoAnchors = { ...db.demoAnchors, [projectId]: now };
       agent.lastSeenAt = now;
+      if (db.showcase?.agents[agent.id]) db.showcase.agents[agent.id].lastTick = new Date(Date.now() - 60_000).toISOString();
       db.logs = [...(db.logs ?? []), { id: nextId(db), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: "INFO", message: "[DEMO] recovery complete; gateway response received durationMs=120", loggedAt: now }];
     }
     write(db);
@@ -751,7 +788,7 @@ export const mockApi = {
 
   async alertChannels(): Promise<AlertChannel[]> {
     const db = read();
-    return delay((db.alertChannels ?? []).map(({ url: _url, ...c }) => c));
+    return delay((db.alertChannels ?? []).filter((c) => (c.createdBy ?? 1) === currentUserId()).map(({ url: _url, createdBy: _createdBy, ...c }) => c));
   },
 
   async saveAlertChannel(id: number | null, body: AlertChannelRequest): Promise<AlertChannel> {
@@ -762,7 +799,7 @@ export const mockApi = {
       throw new Error("Slack Incoming Webhook 주소(https://hooks.slack.com/services/...)를 입력해주세요.");
     }
     const masked = (u: string) => `https://hooks.slack.com/services/****${u.slice(-4)}`;
-    let saved: AlertChannel & { url: string };
+    let saved: AlertChannel & { url: string; createdBy?: number };
     if (id === null) {
       saved = {
         id: nextId(db),
@@ -772,10 +809,11 @@ export const mockApi = {
         target: masked(url),
         enabled: true,
         createdAt: new Date().toISOString(),
+        createdBy: currentUserId(),
       };
       list.push(saved);
     } else {
-      const found = list.find((c) => c.id === id);
+      const found = list.find((c) => c.id === id && (c.createdBy ?? 1) === currentUserId());
       if (!found) throw new Error("알림 채널을 찾을 수 없습니다.");
       found.name = body.name.trim();
       if (url) {
@@ -793,6 +831,7 @@ export const mockApi = {
 
   async deleteAlertChannel(id: number): Promise<void> {
     const db = read();
+    if (!(db.alertChannels ?? []).some((c) => c.id === id && (c.createdBy ?? 1) === currentUserId())) throw new Error("알림 채널을 찾을 수 없습니다.");
     db.alertChannels = (db.alertChannels ?? []).filter((c) => c.id !== id);
     db.alertRules = (db.alertRules ?? []).filter((r) => r.channelId !== id);
     write(db);
@@ -805,16 +844,17 @@ export const mockApi = {
 
   async alertRules(): Promise<AlertRule[]> {
     const db = read();
-    return delay(db.alertRules ?? []);
+    return delay((db.alertRules ?? []).filter((r) => (r.createdBy ?? 1) === currentUserId()));
   },
 
   async saveAlertRule(id: number | null, body: AlertRuleRequest): Promise<AlertRule> {
     const db = read();
-    const channel = (db.alertChannels ?? []).find((c) => c.id === body.channelId);
+    const channel = (db.alertChannels ?? []).find((c) => c.id === body.channelId && (c.createdBy ?? 1) === currentUserId());
     if (!channel) throw new Error("알림 채널을 찾을 수 없습니다.");
-    const project = body.projectId ? db.projects.find((p) => p.id === body.projectId) : null;
+    const project = body.projectId ? ownedProject(db, body.projectId) : null;
     const list = db.alertRules ?? [];
     const base = {
+      createdBy: currentUserId(),
       name: body.name.trim(),
       projectId: body.projectId ?? null,
       projectName: project?.name ?? null,
@@ -832,7 +872,7 @@ export const mockApi = {
       saved = { id: nextId(db), createdAt: new Date().toISOString(), ...base };
       list.push(saved);
     } else {
-      const idx = list.findIndex((r) => r.id === id);
+      const idx = list.findIndex((r) => r.id === id && (r.createdBy ?? 1) === currentUserId());
       if (idx < 0) throw new Error("알림 규칙을 찾을 수 없습니다.");
       saved = { ...list[idx], ...base };
       list[idx] = saved;
@@ -844,12 +884,15 @@ export const mockApi = {
 
   async deleteAlertRule(id: number): Promise<void> {
     const db = read();
+    if (!(db.alertRules ?? []).some((r) => r.id === id && (r.createdBy ?? 1) === currentUserId())) throw new Error("알림 규칙을 찾을 수 없습니다.");
     db.alertRules = (db.alertRules ?? []).filter((r) => r.id !== id);
     write(db);
     return delay(undefined);
   },
 
   async alertDeliveries(): Promise<AlertDelivery[]> {
-    return delay(read().deliveries ?? []);
+    const db = read();
+    const channels = new Set((db.alertChannels ?? []).filter((c) => (c.createdBy ?? 1) === currentUserId()).map((c) => c.id));
+    return delay((db.deliveries ?? []).filter((d) => channels.has(d.channelId)));
   },
 };

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/shared/config/app";
+import { API_BASE_URL, USE_MOCK } from "@/shared/config/app";
 
 const TOKEN_KEY = "mp.token";
 
@@ -37,6 +37,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (USE_MOCK) throw new ApiError("데모에서는 서버 요청을 사용하지 않습니다.", 0);
   const { json, headers, ...rest } = options;
   const token = getToken();
 
@@ -87,6 +88,7 @@ export function upload<T>(
   formData: FormData,
   onProgress?: (percent: number) => void,
 ): Promise<T> {
+  if (USE_MOCK) return Promise.reject(new ApiError("데모 파일은 브라우저 안에서 처리됩니다.", 0));
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}${path}`);

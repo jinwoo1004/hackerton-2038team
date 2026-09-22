@@ -1,5 +1,15 @@
 # Runtime 검증 기록
 
+## 2026-09-22 명시적 프런트 데이터 모드
+
+`demo.ps1`의 Full 빌드·실행은 `NEXT_PUBLIC_DATA_MODE=api`, Frontend 빌드·실행은 `mock`을 명시한다.
+`scripts/runtime/test-data-mode.ps1`의 설정 계약6개와 PowerShell 구문 검사 PASS:
+실제 Prepare 함수를 빌드 대역과 실행해 두 production 모드 및 성공/실패 시 기존 환경값·미설정 상태의 복원을 확인했다.
+두 실행 모드의 데이터 모드·API URL·빌드 경로도 확인했다. 검사 전후 기존 `.demo/state.json` SHA256은 동일했다.
+실제 npm build, 앱 시작/종료, 네트워크, AI 요청은 실행하지 않았다.
+
+## 이전 lifecycle 기록
+
 아래 lifecycle 기록은 명시적 AI provider 분리 이전에 실행한 결과다. provider 분리 후 셸 경계 검증은
 `scripts/llm/verification.md`를 참고한다. 새 backend를 사용하는 전체 lifecycle 재검증은 기존 실행 보존 때문에 아직 UNVERIFIED다.
 

@@ -185,6 +185,7 @@ export type AgentState = "PENDING" | "ONLINE" | "OFFLINE";
 
 export interface MetricSnapshot {
   collectedAt: string;
+  responseMs?: number | null;
   cpuPct?: number | null;
   memoryPct?: number | null;
   diskPct?: number | null;
@@ -226,6 +227,7 @@ export interface LogEntry {
 
 export interface MetricBucket {
   time: string;
+  responseMs?: number | null;
   cpuPct?: number | null;
   memoryPct?: number | null;
   diskPct?: number | null;

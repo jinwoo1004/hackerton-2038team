@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Menu, PanelLeft } from "lucide-react";
 import { NAV_ITEMS } from "./nav";
+import { USE_MOCK } from "@/shared/config/app";
 import { useCrumb } from "./CrumbContext";
 import { useSidebar } from "./SidebarContext";
 
@@ -72,6 +73,7 @@ export function Header() {
           );
         })}
       </nav>
+      {USE_MOCK && <span title="운영 지표와 AI 설명은 합성 시연 데이터이며 실제 서비스의 상태가 아닙니다." className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1.5 text-[11px] font-bold text-primary-600"><span className="h-1.5 w-1.5 rounded-full bg-primary-500" />시연 데이터<span className="hidden sm:inline"> · DEMO</span></span>}
     </header>
   );
 }

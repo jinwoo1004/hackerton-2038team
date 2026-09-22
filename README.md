@@ -10,12 +10,11 @@ React (Next.js)  →  Spring Boot API  →  Python 분석 서비스
                 agent
 ```
 
-호출 방향은 항상 위 순서다. **프런트엔드와 에이전트는 Python 서비스를 직접 호출하지 않는다.**
-Spring Boot 가 전체 오케스트레이터 역할을 한다.
+위 그림은 선택적인 전체 스택 구성이다. **현재 기본 배포는 백엔드 없는 프런트엔드 시연**이며, 브라우저의 합성 데이터로 동작한다. 실제 서버 연결 모드에서는 Spring Boot가 전체 오케스트레이터 역할을 한다.
 
 ## 해커톤 원클릭 실행
 
-실제 공개 배포는 [Vercel g-20 + 서버 배포 안내](docs/DEPLOYMENT.md)를 따른다. 프런트엔드는 52g Studio의 기존 `g-20` 프로젝트, Spring Boot와 FastAPI는 영속 DB·공유 저장소가 있는 서버에서 실행한다. Vercel 빌드에는 실제 백엔드의 `NEXT_PUBLIC_API_BASE_URL`이 필요하며, 배포 서버의 AI는 `deployed/openai_api`로만 연결한다.
+현재 공개 시연은 [Vercel g-20 배포 안내](docs/DEPLOYMENT.md)를 따른다. Root Directory `frontend`, Next.js, `NEXT_PUBLIC_DATA_MODE=mock`으로 배포한다(기본값 mock). 백엔드 주소나 AI 인증은 필요 없다. **데모 둘러보기**로 7개 프로젝트·210건 분석 이력·11개 시연 Agent와 그래프를 확인한다. 아래 Windows 명령은 실제 서버 연결까지 필요한 선택적 전체 스택용이다.
 
 Windows에서 PowerShell 7.4 이상, Node.js, JDK 17, .NET 8 SDK를 준비하고 OUT 루트에서 실행한다. Python 3.11과 프로젝트 의존성은 준비 단계에서 설치한다.
 
@@ -46,8 +45,7 @@ AI 호출은 **local/codex_oauth**, **deployed/openai_api**, **test/mock**으로
 
 ## 실행
 
-세 개를 각각 띄운다. **프런트엔드만 단독으로 실행해도 화면 전체를 확인할 수 있다**
-(백엔드 주소가 없으면 브라우저 내 목 데이터로 동작한다).
+**프런트엔드만 실행하면 화면 전체를 확인할 수 있다.** 기본 `mock` 모드에서는 기존 백엔드 주소가 남아 있어도 브라우저 합성 데이터만 사용한다. `api` 모드를 명시할 때만 아래 백엔드·분석 서비스를 함께 실행한다.
 
 ### 1. Frontend
 
@@ -60,11 +58,11 @@ npm run dev        # http://localhost:3200
 백엔드에 붙이려면 `.env.local` 을 만든다.
 
 ```
+NEXT_PUBLIC_DATA_MODE=api
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
-이 값이 비어 있으면 목 모드로 동작하며, 로그인 화면에 데모 계정
-(`admin@xisnd.com` / `test1234`)이 안내된다.
+`NEXT_PUBLIC_DATA_MODE`를 생략하거나 `mock`으로 지정하면 목업 모드다. 로그인 화면의 **데모 둘러보기** 또는 데모 계정(`admin@xisnd.com` / `test1234`)으로 진입한다. 백엔드 모드에는 `api`와 유효한 API 주소가 모두 필요하다.
 
 ### 2. Backend
 
@@ -111,7 +109,7 @@ uvicorn app.main:app --reload --port 8000                 # service 폴더에서
 /monitoring (이상 탐지, 서버 자원)   /settings/alerts (Slack 채널·알림 규칙)
 ```
 
-프로젝트가 하나도 없으면 `/projects` 는 빈 상태 화면을 보여주고, 프로젝트를 자동으로 열지 않는다.
+목업 모드는 최초 계정별로 7개 시연 프로젝트를 준비한다. 사용자가 삭제한 프로젝트는 조회할 때 자동으로 되살리지 않으며, 사용자 작성 프로젝트와 이전 브라우저 데이터는 보존한다. 실제 API 모드는 등록한 프로젝트가 없으면 빈 상태 화면을 보여준다.
 
 ---
 

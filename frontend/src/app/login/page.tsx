@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Info, UserPlus } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Info, UserPlus } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { AuthLayout } from "@/features/auth/AuthLayout";
 import { EmailField } from "@/features/auth/EmailField";
@@ -26,7 +26,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) router.replace("/projects");
+    if (!loading && user) router.replace(USE_MOCK ? "/overview" : "/projects");
   }, [loading, user, router]);
 
   if (loading || user) return <PageLoader />;
@@ -47,9 +47,22 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login({ email: email.trim(), password });
-      router.replace("/projects");
+      router.replace(USE_MOCK ? "/overview" : "/projects");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function enterDemo() {
+    setSubmitting(true);
+    setFormError("");
+    try {
+      await login({ email: "admin@xisnd.com", password: "test1234" });
+      router.replace("/overview");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "데모를 열지 못했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -87,7 +100,7 @@ export default function LoginPage() {
             <div className="mt-5 rounded-xl border border-dashed border-line bg-ink-100/70 px-4 py-3 text-center">
               <p className="text-[12px] font-bold text-ink-600">데모 모드</p>
               <p className="mt-1 text-[12px] leading-relaxed text-ink-500">
-                브라우저에서 실제 파일을 분석하고 합성 시드로 운영 흐름을 시연합니다.
+                여러 단지의 운영 현황과 분석 결과를 시연 데이터로 둘러보세요.
                 <br />
                 <span className="font-mono text-[11px] text-ink-600">admin@xisnd.com / test1234</span>
               </p>
@@ -96,6 +109,14 @@ export default function LoginPage() {
         </>
       }
     >
+      {USE_MOCK && (
+        <div className="mb-6 rounded-2xl bg-primary-50 p-5">
+          <p className="text-[15px] font-bold text-ink-900">단지 운영 현황을 한눈에</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink-500">프로젝트별 지표, 장애 대응, 분석 보고서까지.<br />회원가입 없이 준비된 데모를 확인하세요.</p>
+          <Button type="button" loading={submitting} onClick={enterDemo} className="mt-4 h-11 w-full">데모 둘러보기 <ArrowRight size={16} /></Button>
+          <p className="mt-2 text-[11px] text-ink-400">모든 운영 수치와 AI 설명은 합성 시연 데이터입니다.</p>
+        </div>
+      )}
       <form onSubmit={onSubmit} noValidate className="space-y-3">
         <div>
           <label htmlFor="login-email" className="sr-only">

@@ -4,6 +4,9 @@ node_modules
 .env*
 !.env*.example
 *.log
+# Authored synthetic fixtures only; real operational logs stay excluded.
+!**/demo-fixtures/gaepo-synthetic.log
+!**/demo-fixtures/buksuwon-synthetic.log
 *.tsbuildinfo
 auth.json
 *.auth.json

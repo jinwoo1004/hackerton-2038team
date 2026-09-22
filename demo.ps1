@@ -70,16 +70,27 @@ function Prepare-Demo {
     if (-not $jar) { throw 'Backend bootJar was not produced.' }
     $jarPath = $jar.FullName
     }
+    $savedFrontendEnvironment = @{}
+    foreach ($key in @('NEXT_PUBLIC_DATA_MODE','NEXT_PUBLIC_API_BASE_URL','NEXT_BUILD_DIR','NEXT_TELEMETRY_DISABLED')) {
+        $savedFrontendEnvironment[$key] = [Environment]::GetEnvironmentVariable($key,'Process')
+    }
     Push-Location (Join-Path $root 'frontend')
     try {
         Invoke-DemoChecked $npm @('ci','--no-audit','--no-fund')
         $env:NEXT_TELEMETRY_DISABLED = '1'
         foreach ($buildMode in @('Full','Frontend')) {
+            $env:NEXT_PUBLIC_DATA_MODE = $(if ($buildMode -eq 'Full') { 'api' } else { 'mock' })
             $env:NEXT_PUBLIC_API_BASE_URL = $(if ($buildMode -eq 'Full') { $backendBase } else { '' })
             $env:NEXT_BUILD_DIR = $(if ($buildMode -eq 'Full') { '.next-demo-full' } else { '.next-demo-frontend' })
             Invoke-DemoChecked $npm @('run','build')
         }
-    } finally { Pop-Location; Remove-Item Env:NEXT_PUBLIC_API_BASE_URL,Env:NEXT_BUILD_DIR -ErrorAction SilentlyContinue }
+    } finally {
+        Pop-Location
+        foreach ($key in $savedFrontendEnvironment.Keys) {
+            if ($null -eq $savedFrontendEnvironment[$key]) { Remove-Item -LiteralPath ("Env:" + $key) -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable($key,$savedFrontendEnvironment[$key],'Process') }
+        }
+    }
     Write-DemoJson $readyFile @{ node=$node; java=$java; python=$python; dotnet=$dotnet; jar=$jarPath; fullReady=($Mode -eq 'Full'); backendPort=$BackendPort; frontendPort=$FrontendPort; servicePort=$ServicePort; preparedAt=[DateTimeOffset]::UtcNow.ToString('o') }
     Write-Host "Preparation complete ($Mode). Production builds are available offline."
 }
@@ -153,6 +164,7 @@ try {
     if ($Mode -eq 'Full' -and $ready.backendPort -ne $BackendPort) { throw "Prepared frontend targets backend port $($ready.backendPort). Run Prepare with -BackendPort $BackendPort before starting this configuration." }
     foreach ($old in @(Get-ChildItem -LiteralPath $runtime -File)) { Remove-Item -LiteralPath $old.FullName -Force }
     $env:NEXT_TELEMETRY_DISABLED = '1'
+    $env:NEXT_PUBLIC_DATA_MODE = $(if ($Mode -eq 'Full') { 'api' } else { 'mock' })
     $env:NEXT_PUBLIC_API_BASE_URL = $(if ($Mode -eq 'Full') { $backendBase } else { '' })
     $env:NEXT_BUILD_DIR = $(if ($Mode -eq 'Full') { '.next-demo-full' } else { '.next-demo-frontend' })
     if (-not (Test-Path -LiteralPath (Join-Path $root "frontend/$env:NEXT_BUILD_DIR/BUILD_ID"))) { throw 'Selected production build is missing. Run .\demo.ps1 -Action Prepare.' }

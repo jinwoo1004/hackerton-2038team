@@ -33,6 +33,10 @@ Full Start는 `APP_RUNTIME=local`, `LLM_PROVIDER=codex_oauth`, `CODEX_MODEL`, �
 `test-runtime.ps1`은 이 두 값을 테스트 동안만 강제하고 종료 시 원래 값을 복원한다.
 배포 `deployed/openai_api`는 `demo.ps1`로 실행하지 않는다.
 프론트 단독 환경은 `demo.ps1 -Action Prepare -Mode Frontend`로 Node/npm만 사용해 준비할 수 있다.
+데이터 모드는 명시적으로 지정한다. Full 빌드·실행은 `NEXT_PUBLIC_DATA_MODE=api`, `-Mode Frontend` 빌드·실행은 `mock`이다.
+API 주소만 설정해도 데이터 모드가 바뀌지는 않는다. 두 모드는 각각 별도 production build를 사용하며 프런트 코드 변경 후에는 Prepare가 필요하다.
+Prepare는 성공·실패와 관계없이 호출 전의 데이터 모드·API 주소·빌드 디렉터리·telemetry 환경변수를 복원한다.
+`scripts/runtime/test-data-mode.ps1`은 빌드를 메모리 내 대역으로 치환해 두 모드의 설정과 준비 실패 시 환경 복원을 검사하며, 실행 중인 앱이나 AI에 접근하지 않는다.
 Full 준비는 두 프론트 production build(`.next-demo-full`, `.next-demo-frontend`),
 Spring Boot jar, Python 패키지, C# Worker release build를 만든다.
 빌드 이후 소스를 바꾸면 Prepare를 다시 실행한다.

@@ -32,6 +32,7 @@ export const agentApi = {
   },
 
   async downloadInstaller(fileName: string): Promise<void> {
+    if (USE_MOCK) throw new ApiError("데모에서는 에이전트 설치가 필요하지 않습니다.", 0);
     const res = await fetch(`${API_BASE_URL}/api/agent-installer/download`, {
       headers: { Authorization: `Bearer ${getToken() ?? ""}` },
     });

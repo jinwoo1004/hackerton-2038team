@@ -28,7 +28,7 @@ export function DemoControl({ showIncident = true }: { showIncident?: boolean })
     const start = performance.now();
     try {
       if (action === "SEED") { const seed = await demoApi.seed(); setProjectId(seed.projectId); toast.success("시연 데이터와 ONLINE 에이전트를 준비했습니다."); }
-      else if (action === "RESET") { await demoApi.reset(); setProjectId(null); setIncident(null); setElapsed(null); toast.success("이 계정의 시연 데이터를 초기화했습니다. 다시 준비하면 같은 시나리오로 시작합니다."); }
+      else if (action === "RESET") { await demoApi.reset(); const seed = await demoApi.seed(); setProjectId(seed.projectId); setIncident(null); setElapsed(null); toast.success("시연 데이터를 처음 상태로 복원했습니다."); }
       else if (projectId && action === "RECOVER") { await demoApi.recover(projectId); setIncident(null); toast.success("시연 서버를 복구했습니다. 상태와 이벤트가 갱신됩니다."); }
       else if (projectId) { setIncident(await demoApi.trigger(projectId, action as "LATENCY" | "ERROR_SPIKE")); setElapsed(performance.now() - start); toast.success("합성 이상이 감지되었습니다. AI 설명과 Slack 미리보기를 확인하세요."); }
     } catch (error) { toast.error(error instanceof Error ? error.message : "시연 요청을 처리하지 못했습니다."); }
@@ -38,7 +38,7 @@ export function DemoControl({ showIncident = true }: { showIncident?: boolean })
     <div className="p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 className="flex items-center gap-2 text-[15px] font-bold text-ink-900"><FlaskConical size={17} className="text-primary-600" /> 안전 장애 시연</h2><p className="mt-1 text-[12px] text-ink-500">합성 데이터로 응답 지연·오류 급증을 재현합니다. 실제 서버에는 영향을 주지 않습니다.</p></div>
-        <span className="rounded-md bg-ink-100 px-2 py-1 text-[11px] font-semibold text-ink-500">{USE_MOCK ? "브라우저 단독 · 로컬 분석" : "전체 스택 연결"}</span>
+        <span className="rounded-md bg-ink-100 px-2 py-1 text-[11px] font-semibold text-ink-500">{USE_MOCK ? "시연 데이터" : "전체 스택 연결"}</span>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button size="sm" variant={projectId ? "secondary" : "primary"} loading={busy === "SEED"} disabled={!!busy} onClick={() => run("SEED")}>{projectId ? "시연 데이터 확인" : "시연 데이터 준비"}</Button>

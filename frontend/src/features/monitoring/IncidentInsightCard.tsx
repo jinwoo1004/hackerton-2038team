@@ -6,6 +6,7 @@ import { demoApi } from "@/services/demoApi";
 import { Button } from "@/shared/ui/Button";
 import { useToast } from "@/shared/ui/Toast";
 import type { Incident, SlackPreview } from "@/types";
+import { USE_MOCK } from "@/shared/config/app";
 
 export function IncidentInsightCard({ incident }: { incident: Incident }) {
   const [preview, setPreview] = useState<SlackPreview | null>(null);
@@ -25,7 +26,7 @@ export function IncidentInsightCard({ incident }: { incident: Incident }) {
     <section className="mt-3 rounded-xl border border-line bg-toss-soft p-4" aria-label="AI 장애 징후 설명">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-[13px] font-bold text-ink-900"><BrainCircuit size={16} className="text-primary-600" /> AI 장애 징후 설명</h3>
-        <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-ink-500">{insight.source === "OPENAI" ? "OpenAI" : "로컬 근거 기반 설명"}</span>
+        <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-ink-500">{USE_MOCK ? "시연용 AI 설명 · 합성 데이터" : insight.source === "OPENAI" ? "OpenAI" : "로컬 근거 기반 설명"}</span>
       </div>
       <p className="mt-2 text-[13px] leading-relaxed text-ink-700">{insight.summary}</p>
       <dl className="mt-3 grid grid-cols-2 gap-2 xl:grid-cols-4">

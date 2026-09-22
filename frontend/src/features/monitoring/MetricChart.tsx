@@ -5,11 +5,10 @@ import { SERIES_COLORS } from "@/features/analysis/severity";
 import { cn } from "@/shared/lib/cn";
 import type { MetricBucket, MetricSeries } from "@/types";
 
-type MetricKey = "cpuPct" | "memoryPct" | "diskPct";
+type MetricKey = "cpuPct" | "memoryPct" | "diskPct" | "responseMs";
 
 const HEIGHT = 168;
-const PAD = { top: 10, right: 10, bottom: 24, left: 34 };
-const TICKS = [0, 50, 100];
+const PAD = { top: 10, right: 10, bottom: 24, left: 52 };
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -54,12 +53,17 @@ export function MetricChart({
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
+  const unit = metric === "responseMs" ? "ms" : "%";
+  const maximum = metric === "responseMs"
+    ? Math.ceil(series.reduce((max, s) => s.points.reduce((n, p) => Math.max(n, p.responseMs ?? 0), max), 500) / 500) * 500
+    : 100;
+  const ticks = [0, maximum / 2, maximum];
 
   const start = now - minutes * 60_000;
   const plotW = Math.max(0, width - PAD.left - PAD.right);
   const plotH = HEIGHT - PAD.top - PAD.bottom;
   const x = (ms: number) => PAD.left + ((ms - start) / (now - start)) * plotW;
-  const y = (v: number) => PAD.top + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+  const y = (v: number) => PAD.top + plotH - (Math.max(0, Math.min(maximum, v)) / maximum) * plotH;
 
   const lines = useMemo(
     () =>
@@ -131,7 +135,7 @@ export function MetricChart({
           {latest.length === 1 && (
             <p className="text-[22px] font-extrabold leading-none tracking-tight text-ink-900 tabular-nums">
               {Math.round(latest[0].last!.v)}
-              <span className="ml-0.5 text-[13px] font-bold text-ink-400">%</span>
+              <span className="ml-0.5 text-[13px] font-bold text-ink-400">{unit}</span>
             </p>
           )}
           <button
@@ -161,11 +165,11 @@ export function MetricChart({
         <div ref={ref} className="relative mt-3" style={{ height: HEIGHT }}>
           {width > 0 && (
             <svg width={width} height={HEIGHT} role="img" aria-label={`${title} 추이`}>
-              {TICKS.map((t) => (
+              {ticks.map((t) => (
                 <g key={t}>
                   <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} stroke="#EEF0F3" />
                   <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" className="fill-ink-400 text-[10px] tabular-nums">
-                    {t}%
+                    {t}{unit}
                   </text>
                 </g>
               ))}
@@ -257,7 +261,7 @@ export function MetricChart({
                   <li key={r.s.agentId} className="flex items-center gap-2">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: colorOf(r.s.agentId, order) }} />
                     <span className="min-w-0 flex-1 truncate text-ink-200">{r.s.agentName}</span>
-                    <span className="font-bold tabular-nums">{r.p.v.toFixed(1)}%</span>
+                    <span className="font-bold tabular-nums">{r.p.v.toFixed(metric === "responseMs" ? 0 : 1)}{unit}</span>
                   </li>
                 ))}
               </ul>
@@ -306,7 +310,7 @@ function MetricTable({ series, metric }: { series: MetricSeries[]; metric: Metri
               <td className="py-1">{hhmm(Date.parse(time))}</td>
               {series.map((s) => (
                 <td key={s.agentId} className="py-1 text-right">
-                  {row[s.agentId] == null ? "-" : `${row[s.agentId]!.toFixed(1)}%`}
+                  {row[s.agentId] == null ? "-" : `${row[s.agentId]!.toFixed(metric === "responseMs" ? 0 : 1)}${metric === "responseMs" ? "ms" : "%"}`}
                 </td>
               ))}
             </tr>
