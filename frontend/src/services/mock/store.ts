@@ -689,7 +689,7 @@ export const mockApi = {
       const analysis = db.analyses.filter((a) => a.projectId === found.id).at(-1);
       if (agent && analysis) return { projectId: found.id, agentId: agent.id, analysisId: analysis.id };
     }
-    const project = found ?? await mockApi.createProject({ name: "단지서버 월패드 연동 데모", projectCode: DEMO_CODE, description: "실제 장애 서버에 접속하지 않는 합성 시드 시연 프로젝트", technologies: [{ category: "LANGUAGE", name: "TypeScript" }] });
+    const project = found ?? await mockApi.createProject({ name: "단지서버", projectCode: DEMO_CODE, description: "실제 시스템에 접속하지 않는 단지서버 합성 시연 프로젝트", technologies: [{ category: "LANGUAGE", name: "TypeScript" }] });
       for (const [name, kind] of [["wallpad-source.zip", "SOURCE"], ["rules.md", "RULE"], ["gaepo-synthetic.log", "LOG"], ["buksuwon-synthetic.log", "LOG"]] as const) {
         if (read().files.some((f) => f.projectId === project.id && f.originalFilename === name && f.fileType === kind)) continue;
         const response = await fetch(`/demo/${name}`);
@@ -701,7 +701,7 @@ export const mockApi = {
     const now = new Date().toISOString();
     const points = seededMetrics(now);
     const last = points[points.length - 1];
-    const agent: Agent = { id: nextId(next), projectId: project.id, name: "월패드 시연 에이전트", tokenPrefix: "demo-public", hostname: "wallpad-demo-01", os: "Windows (synthetic)", agentVersion: "demo-v1", state: "ONLINE", lastSeenAt: now, createdAt: now, latest: { collectedAt: now, ...last } };
+    const agent: Agent = { id: nextId(next), projectId: project.id, name: "단지서버 시연 에이전트", tokenPrefix: "demo-public", hostname: "complex-server-01", os: "Windows (synthetic)", agentVersion: "demo-v1", state: "ONLINE", lastSeenAt: now, createdAt: now, latest: { collectedAt: now, ...last } };
     next.agents = [...(next.agents ?? []), agent];
     next.demoAnchors = { ...next.demoAnchors, [project.id]: now };
     next.logs = [...(next.logs ?? []), ...Array.from({ length: 20 }, (_, index): LogEntry => ({ id: nextId(next), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: "INFO", message: `[DEMO] gateway response received copy=00-0001 durationMs=120 sample=${index}`, loggedAt: new Date(Date.parse(now) - (19 - index) * 30_000).toISOString() }))];
@@ -757,7 +757,7 @@ export const mockApi = {
     if (!agent) throw new Error("시연 에이전트를 찾을 수 없습니다.");
     const now = new Date().toISOString();
     const insight = localInsight(scenario, agent.hostname ?? agent.name);
-    const incident: Incident = { id: nextId(db), projectId, projectName: project.name, projectCode: project.projectCode, agentId: agent.id, agentName: agent.name, rule, ruleLabel: scenario === "LATENCY" ? "응답 지연" : "오류 추세 이상", severity: "CRITICAL", status: "OPEN", title: scenario === "LATENCY" ? "월패드 연동 응답 지연 감지" : "월패드 연동 오류 급증 감지", detail: `응답 ${insight.currentResponseMs}ms · Timeout ${insight.timeoutCount}건 · 오류 ${insight.errorCount}건`, observed: scenario === "LATENCY" ? insight.currentResponseMs : insight.errorCount, threshold: scenario === "LATENCY" ? 1000 : 10, openedAt: now, lastDetectedAt: now, insight };
+    const incident: Incident = { id: nextId(db), projectId, projectName: project.name, projectCode: project.projectCode, agentId: agent.id, agentName: agent.name, rule, ruleLabel: scenario === "LATENCY" ? "응답 지연" : "오류 추세 이상", severity: "CRITICAL", status: "OPEN", title: `${project.name} ${scenario === "LATENCY" ? "응답 지연" : "오류 급증"} 감지`, detail: `응답 ${insight.currentResponseMs}ms · Timeout ${insight.timeoutCount}건 · 오류 ${insight.errorCount}건`, observed: scenario === "LATENCY" ? insight.currentResponseMs : insight.errorCount, threshold: scenario === "LATENCY" ? 1000 : 10, openedAt: now, lastDetectedAt: now, insight };
     db.incidents = [...(db.incidents ?? []), incident];
     db.logs = [...(db.logs ?? []), ...Array.from({ length: insight.errorCount + insight.timeoutCount }, (_, index): LogEntry => ({ id: nextId(db), agentId: agent.id, agentName: agent.name, source: "synthetic-wallpad.log", level: index < insight.timeoutCount ? "WARN" : "ERROR", message: index < insight.timeoutCount ? `[DEMO] gateway response Timeout; synthetic deadline exceeded durationMs=${insight.currentResponseMs}` : "[DEMO] copy format ERROR: invalid synthetic value; expected NN-NNNN", loggedAt: now }))];
     agent.lastSeenAt = now;

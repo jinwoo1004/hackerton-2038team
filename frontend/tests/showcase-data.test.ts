@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mockApi, type MockDb } from "../src/services/mock/store";
-import { ensureShowcase, refreshShowcase, materializeShowcaseAnalysis, showcaseMetrics, showcaseHealth, SHOWCASE_PROJECTS, MOCK_STORAGE_KEY, LEGACY_MOCK_STORAGE_KEY } from "../src/services/mock/showcaseData";
+import { ensureShowcase, refreshShowcase, materializeShowcaseAnalysis, showcaseMetrics, showcaseHealth, SHOWCASE_PROJECTS, SHOWCASE_VERSION, MOCK_STORAGE_KEY, LEGACY_MOCK_STORAGE_KEY } from "../src/services/mock/showcaseData";
 
 const NOW = Date.parse("2026-09-22T02:45:30Z");
 const DAY = 86400_000;
@@ -20,9 +20,11 @@ test("first use creates seven distinct synthetic projects with 30-day histories 
   assert.equal(one.projects.length, 7);
   assert.equal(one.analyses.length, 210);
   assert.equal(one.agents?.length, 11);
-  assert.ok(one.projects.some((p) => p.name === "개포 프레지던스 자이"));
-  assert.ok(one.projects.some((p) => p.name === "북수원 자이 렉스비아"));
+  assert.deepEqual(one.projects.map((p) => p.name), ["수목관리플랫폼", "워크허브", "작업중지권", "프리콘이행점검시스템", "현장안전관리시스템", "스마트검침시스템", "단지서버"]);
+  assert.deepEqual(one.projects.map((p) => p.projectCode), ["TREE-CARE", "WORK-HUB", "STOP-WORK", "PRECON-CHECK", "SITE-SAFETY", "SMART-METER", "WALLPAD-DEMO"]);
   assert.ok(one.projects.every((p) => p.description?.includes("합성 시연")));
+  assert.ok(one.projects.every((p) => p.description?.includes("실제 시스템 운영 상태")));
+  assert.ok(one.events?.every((event) => event.projectName === one.projects.find((p) => p.id === event.projectId)?.name));
   for (const project of one.projects) {
     const history = one.analyses.filter((a) => a.projectId === project.id);
     assert.equal(history.length, 30);
@@ -102,6 +104,63 @@ test("browser migration preserves legacy records and keeps the previous key reco
   await mockApi.resetDemo();
   assert.equal((await mockApi.listProjects()).length, 8);
   assert.equal((await mockApi.getProject(10)).name, "내 프로젝트");
+}));
+
+test("persisted catalog labels migrate in place without resetting histories, incidents, or user records", async () => browser(async (storage) => {
+  const db = empty(); ensureShowcase(db, 1, NOW);
+  const previous = [
+    ["GAEPO-XI", "개포 프레지던스 자이", "gaepo-gateway", "월패드 · 방문 예약"],
+    ["BUKSUWON-XI", "북수원 자이 렉스비아", "buksuwon-api", "공동현관 · 홈네트워크"],
+    ["SONGDO-DEMO", "송도 센트럴 단지", "songdo-parking", "주차 관제 · 차량 출입"],
+    ["GWACHEON-DEMO", "과천 포레스트 단지", "gwacheon-community", "커뮤니티 · 시설 예약"],
+    ["MAPO-DEMO", "마포 리버뷰 단지", "mapo-energy", "원격 검침 · 에너지"],
+    ["DONGTAN-DEMO", "동탄 레이크 단지", "dongtan-access", "출입 인증 · 모바일 연동"],
+    ["WALLPAD-DEMO", "월패드 안전 시연", "wallpad-demo-01", "응답 지연 · 오류 급증 실습"],
+  ];
+  let legacyJson = JSON.stringify(db);
+  for (let i = 0; i < SHOWCASE_PROJECTS.length; i++) {
+    const spec = SHOWCASE_PROJECTS[i], old = previous[i];
+    for (const [before, after] of [[spec.host, old[2]], [spec.name, old[1]], [spec.service, old[3]], [spec.code, old[0]], [spec.code.toLowerCase(), old[0].toLowerCase()]]) legacyJson = legacyJson.split(before).join(after);
+  }
+  const legacy = JSON.parse(legacyJson) as MockDb;
+  legacy.showcase!.version = 2;
+  const complexServerId = legacy.projects[6].id;
+  const complexServerEvent = legacy.events?.find((event) => event.projectId === complexServerId);
+  if (complexServerEvent) complexServerEvent.message = "월패드 연동 응답 지연 감지";
+  const manual = { ...legacy.projects[0], id: ++legacy.seq, projectCode: "MY-SYSTEM", name: "개포 프레지던스 자이", nickname: "직접 등록", description: "gaepo-gateway 사용자가 작성한 원문" };
+  legacy.projects.push(manual);
+  const colliding = { ...legacy.projects[0], id: ++legacy.seq, projectCode: "tree-care", name: "사용자 수목 프로젝트", nickname: "직접 등록", description: "사용자가 만든 프로젝트" };
+  legacy.projects.push(colliding);
+  const uploaded = { id: ++legacy.seq, projectId: legacy.projects[0].id, fileType: "LOG" as const, originalFilename: "사용자-gaepo-original.log", fileSize: 123, mimeType: "text/plain", createdAt: new Date(NOW).toISOString() };
+  legacy.files.push(uploaded);
+  const ids = legacy.projects.map((p) => p.id);
+  const analyses = legacy.analyses.map((a) => [a.id, a.createdAt, a.score, a.status]);
+  const incidents = legacy.incidents!.map((i) => [i.id, i.openedAt, i.resolvedAt, i.status]);
+  const health = showcaseHealth(legacy.projects, legacy.incidents!, NOW);
+  storage.setItem(MOCK_STORAGE_KEY, JSON.stringify(legacy));
+  const projects = await mockApi.listProjects();
+  const migrated = JSON.parse(storage.getItem(MOCK_STORAGE_KEY)!) as MockDb;
+  assert.equal(migrated.showcase!.version, SHOWCASE_VERSION);
+  assert.deepEqual(projects.map((p) => p.id).sort((a, b) => a - b), ids.sort((a, b) => a - b));
+  assert.deepEqual(migrated.projects.slice(0, 7).map((p) => p.name), SHOWCASE_PROJECTS.map((p) => p.name));
+  assert.deepEqual(migrated.analyses.map((a) => [a.id, a.createdAt, a.score, a.status]), analyses);
+  assert.deepEqual(migrated.incidents!.map((i) => [i.id, i.openedAt, i.resolvedAt, i.status]), incidents);
+  assert.deepEqual(showcaseHealth(migrated.projects, migrated.incidents!, NOW), health);
+  assert.deepEqual(migrated.projects.find((p) => p.id === manual.id), manual);
+  assert.deepEqual(migrated.files.find((f) => f.id === uploaded.id), uploaded);
+  assert.equal(migrated.agents?.length, 11);
+  assert.ok(migrated.events?.every((e) => e.projectName === migrated.projects.find((p) => p.id === e.projectId)?.name));
+  assert.ok(migrated.events?.every((e) => !(e.message ?? "").includes("월패드 연동")));
+  assert.ok(migrated.incidents?.every((i) => i.projectName === migrated.projects.find((p) => p.id === i.projectId)?.name && i.agentName === migrated.agents?.find((a) => a.id === i.agentId)?.name));
+  assert.equal(migrated.projects.filter((p) => p.projectCode.toUpperCase() === "TREE-CARE").length, 1);
+  assert.equal(migrated.projects.find((p) => p.id === colliding.id)?.projectCode, "tree-care");
+  assert.equal((await mockApi.listProjects()).length, 9);
+  const seed = await mockApi.seedDemo();
+  assert.equal((await mockApi.getProject(seed.projectId)).name, "단지서버");
+  const triggered = await mockApi.triggerDemo(seed.projectId, "LATENCY");
+  assert.equal(triggered.insight?.serverName, "complex-server-01");
+  assert.match((await mockApi.incidentPreview(triggered.id)).message, /단지서버/);
+  await mockApi.recoverDemo(seed.projectId);
 }));
 
 test("trigger, recovery, reset and analysis remain usable without a backend or seeded-file fetch", async () => browser(async () => {

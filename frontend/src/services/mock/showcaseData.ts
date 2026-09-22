@@ -4,20 +4,32 @@ import { DEMO_CODE, localInsight } from "./demoData";
 import type { ParsedUpload } from "./documentParser";
 import type { MockDb } from "./store";
 
-export const SHOWCASE_VERSION = 1;
+export const SHOWCASE_VERSION = 3;
+// Keep the persisted schema key stable; catalog migrations preserve existing IDs and user data.
 export const MOCK_STORAGE_KEY = "mp.mockdb.showcase.v1";
 export const LEGACY_MOCK_STORAGE_KEY = "mp.mockdb";
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
 
 export const SHOWCASE_PROJECTS = [
-  { code: "GAEPO-XI", name: "개포 프레지던스 자이", host: "gaepo-gateway", service: "월패드 · 방문 예약", cpu: 38, memory: 52, disk: 41, response: 135, agents: 2, issue: null },
-  { code: "BUKSUWON-XI", name: "북수원 자이 렉스비아", host: "buksuwon-api", service: "공동현관 · 홈네트워크", cpu: 59, memory: 69, disk: 58, response: 240, agents: 2, issue: "LATENCY" },
-  { code: "SONGDO-DEMO", name: "송도 센트럴 단지", host: "songdo-parking", service: "주차 관제 · 차량 출입", cpu: 31, memory: 44, disk: 36, response: 105, agents: 1, issue: null },
-  { code: "GWACHEON-DEMO", name: "과천 포레스트 단지", host: "gwacheon-community", service: "커뮤니티 · 시설 예약", cpu: 47, memory: 67, disk: 73, response: 180, agents: 2, issue: "MEMORY_HIGH" },
-  { code: "MAPO-DEMO", name: "마포 리버뷰 단지", host: "mapo-energy", service: "원격 검침 · 에너지", cpu: 24, memory: 39, disk: 32, response: 92, agents: 1, issue: null },
-  { code: "DONGTAN-DEMO", name: "동탄 레이크 단지", host: "dongtan-access", service: "출입 인증 · 모바일 연동", cpu: 42, memory: 58, disk: 65, response: 155, agents: 2, issue: "DISK_HIGH" },
-  { code: DEMO_CODE, name: "월패드 안전 시연", host: "wallpad-demo-01", service: "응답 지연 · 오류 급증 실습", cpu: 33, memory: 57, disk: 44, response: 120, agents: 1, issue: null },
+  { code: "TREE-CARE", name: "수목관리플랫폼", host: "tree-care-api", service: "수목 자산 · 점검 이력", cpu: 38, memory: 52, disk: 41, response: 135, agents: 2, issue: null },
+  { code: "WORK-HUB", name: "워크허브", host: "workhub-api", service: "협업 공간 · 업무 요청", cpu: 59, memory: 69, disk: 58, response: 240, agents: 2, issue: "LATENCY" },
+  { code: "STOP-WORK", name: "작업중지권", host: "stop-work-api", service: "위험 신고 · 작업 중지 요청", cpu: 31, memory: 44, disk: 36, response: 105, agents: 1, issue: null },
+  { code: "PRECON-CHECK", name: "프리콘이행점검시스템", host: "precon-check-api", service: "사전 시공 점검 · 이행 현황", cpu: 47, memory: 67, disk: 73, response: 180, agents: 2, issue: "MEMORY_HIGH" },
+  { code: "SITE-SAFETY", name: "현장안전관리시스템", host: "site-safety-api", service: "안전 점검 · 위험 요인 추적", cpu: 24, memory: 39, disk: 32, response: 92, agents: 1, issue: null },
+  { code: "SMART-METER", name: "스마트검침시스템", host: "smart-meter-api", service: "원격 검침 · 에너지 사용량", cpu: 42, memory: 58, disk: 65, response: 155, agents: 2, issue: "DISK_HIGH" },
+  { code: DEMO_CODE, name: "단지서버", host: "complex-server", service: "월패드 연동 · 응답 지연 및 오류 감지", cpu: 33, memory: 57, disk: 44, response: 120, agents: 1, issue: null },
+] as const;
+
+// Previous labels are retained only to migrate authored showcase records in existing browsers.
+const PREVIOUS_LABELS = [
+  ["GAEPO-XI", "개포 프레지던스 자이", "gaepo-gateway", "월패드 · 방문 예약"],
+  ["BUKSUWON-XI", "북수원 자이 렉스비아", "buksuwon-api", "공동현관 · 홈네트워크"],
+  ["SONGDO-DEMO", "송도 센트럴 단지", "songdo-parking", "주차 관제 · 차량 출입"],
+  ["GWACHEON-DEMO", "과천 포레스트 단지", "gwacheon-community", "커뮤니티 · 시설 예약"],
+  ["MAPO-DEMO", "마포 리버뷰 단지", "mapo-energy", "원격 검침 · 에너지"],
+  ["DONGTAN-DEMO", "동탄 레이크 단지", "dongtan-access", "출입 인증 · 모바일 연동"],
+  [DEMO_CODE, "월패드 안전 시연", "wallpad-demo-01", "응답 지연 · 오류 급증 실습"],
 ] as const;
 
 export interface ShowcaseState {
@@ -34,14 +46,14 @@ const id = (db: MockDb) => ++db.seq;
 const minuteFloor = (time: number) => Math.floor(time / MINUTE) * MINUTE;
 const round = (value: number) => Math.round(value * 10) / 10;
 
-/** These inputs are authored for this public showcase, never copied from residential logs or source. */
+/** These inputs are authored for this public showcase, never copied from operational logs or source. */
 export function showcaseInputs(profile: number, daysAgo = 0, instant = Date.now()): ParsedUpload[] {
   const spec = SHOWCASE_PROJECTS[profile];
   const regression = Math.floor(daysAgo / 6);
   const diagnostics = 1 + (profile % 3) + regression + ((Math.floor(instant / DAY) + profile) % 3 === 0 ? 1 : 0);
   const sourceEntries = [
     { path: "src/gateway/RequestGateway.ts", text: [
-      "// SYNTHETIC SHOWCASE: sample code only, never connected to a residential service.",
+      "// SYNTHETIC SHOWCASE: sample code only, never connected to a production service.",
       `export function ${profile % 3 === 1 ? "dispatch_request" : "dispatchRequest"}(payload: string) {`,
       "  const request = JSON.parse(payload);",
       ...Array.from({ length: diagnostics }, (_, i) => `  console.log('SYNTHETIC diagnostic stage ${i + 1}', request.kind);`),
@@ -70,7 +82,7 @@ export function showcaseInputs(profile: number, daysAgo = 0, instant = Date.now(
     ].join("\n") },
   ];
   if (profile === 1 || profile === 5 || regression >= 4) sourceEntries.push({ path: "src/legacy/SyntheticSettings.ts", text: "// SYNTHETIC: intentionally invalid configuration for a security finding.\nexport const password = 'SYNTHETIC-NOT-A-CREDENTIAL';\n" });
-  const ruleText = ["# 합성 운영 코드 품질 규칙", "이 문서는 공개 시연용 합성 규칙이며 실제 단지 규격이 아닙니다.", "`console.log()` 사용 금지", "`eval()` 사용 금지", "함수는 20줄 이하", "한 줄 길이는 100자 이하", "함수 이름은 camelCase 사용"].join("\n");
+  const ruleText = ["# 합성 운영 코드 품질 규칙", "이 문서는 공개 시연용 합성 규칙이며 실제 시스템 규격이 아닙니다.", "`console.log()` 사용 금지", "`eval()` 사용 금지", "함수는 20줄 이하", "한 줄 길이는 100자 이하", "함수 이름은 camelCase 사용"].join("\n");
   const lines = Array.from({ length: 96 }, (_, i) => {
     const at = iso(instant - (95 - i) * 15 * MINUTE);
     const error = i % (15 - Math.min(8, profile + regression)) === 0;
@@ -80,7 +92,7 @@ export function showcaseInputs(profile: number, daysAgo = 0, instant = Date.now(
     return `${at} ${level} [SYNTHETIC] ${spec.host} ${message} responseMs=${spec.response + i % 17} sequence=${i}`;
   });
   return [
-    { name: `${spec.code.toLowerCase()}-synthetic-source.zip`, kind: "SOURCE", entries: sourceEntries, notes: ["공개 시연용으로 생성한 합성 소스입니다. 실제 단지 코드를 포함하지 않습니다."] },
+    { name: `${spec.code.toLowerCase()}-synthetic-source.zip`, kind: "SOURCE", entries: sourceEntries, notes: ["공개 시연용으로 생성한 합성 소스입니다. 실제 시스템 코드를 포함하지 않습니다."] },
     { name: "synthetic-quality-rules.md", kind: "RULE", entries: [{ path: "synthetic-quality-rules.md", text: ruleText }], notes: [] },
     { name: `${spec.code.toLowerCase()}-synthetic.log`, kind: "LOG", entries: [{ path: `${spec.code.toLowerCase()}-synthetic.log`, text: lines.join("\n") }], notes: ["시간·응답·오류를 포함한 모든 로그 값은 결정적 합성 데이터입니다."] },
   ];
@@ -97,7 +109,7 @@ export function showcaseAnalysis(profile: number, daysAgo: number, instant: numb
     buckets.set(bucket, value);
   }
   result.logs.timeline = [...buckets.values()];
-  result.notes.unshift("[합성 시연] 이력의 소스·로그를 실제 로컬 분석기로 검사한 결과입니다. 실제 단지의 코드 품질이나 운영 상태와 무관합니다.");
+  result.notes.unshift("[합성 시연] 이력의 소스·로그를 실제 로컬 분석기로 검사한 결과입니다. 실제 시스템의 코드 품질이나 운영 상태와 무관합니다.");
   return result;
 }
 
@@ -131,10 +143,59 @@ function seededIncident(db: MockDb, project: Project, agent: Agent, profile: num
   return incident;
 }
 
+function renameSyntheticLabels<T>(value: T, replacements: readonly (readonly [string, string])[]): T {
+  if (typeof value === "string") return replacements.reduce<string>((text, [before, after]) => text.split(before).join(after), value) as T;
+  if (Array.isArray(value)) return value.map((entry) => renameSyntheticLabels(entry, replacements)) as T;
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, renameSyntheticLabels(entry, replacements)])) as T;
+  return value;
+}
+
+/** Upgrade only records identified as authored showcase data; never reseed or replace user projects. */
+function migrateShowcaseCatalog(db: MockDb): boolean {
+  const state = db.showcase;
+  if (!state || state.version >= SHOWCASE_VERSION) return false;
+  for (const [rawId, seeded] of Object.entries(state.projects)) {
+    const project = db.projects.find((p) => p.id === Number(rawId));
+    const spec = SHOWCASE_PROJECTS[seeded.profile];
+    const previous = PREVIOUS_LABELS[seeded.profile];
+    if (!project || !spec || !previous) continue;
+    const [oldCode, oldName, oldHost, oldService] = previous;
+    const replacements: [string, string][] = [
+      [oldHost, spec.host], [oldCode, spec.code], [oldCode.toLowerCase(), spec.code.toLowerCase()],
+      [oldName, spec.name], [oldService, spec.service], ["실제 단지", "실제 시스템"],
+      ["a residential service", "a production service"],
+      ["월패드 연동 요청과 응답 형식", "서비스 연동 요청과 응답 형식"],
+      ...(seeded.profile === 6 ? [["월패드 연동", "단지서버 연동"] as [string, string]] : []),
+    ];
+    if (project.name === oldName) project.name = spec.name;
+    if (project.projectCode === oldCode && !db.projects.some((p) => p.id !== project.id && (p.createdBy ?? 1) === (project.createdBy ?? 1) && p.projectCode.toUpperCase() === spec.code.toUpperCase())) project.projectCode = spec.code;
+    if (project.description?.startsWith("[합성 시연]")) project.description = renameSyntheticLabels(project.description, replacements);
+    db.agents = db.agents?.map((agent) => agent.projectId === project.id && state.agents[agent.id] ? renameSyntheticLabels(agent, replacements) : agent);
+    for (const file of db.files.filter((f) => f.projectId === project.id && state.files[f.id])) {
+      state.files[file.id] = renameSyntheticLabels(state.files[file.id], replacements);
+      file.originalFilename = state.files[file.id].name;
+      file.fileSize = state.files[file.id].entries.reduce((size, entry) => size + new TextEncoder().encode(entry.text).length, 0);
+    }
+    db.analyses = db.analyses.map((analysis) => analysis.projectId === project.id && state.analyses[analysis.id] ? renameSyntheticLabels(analysis, replacements) : analysis);
+    db.events = db.events?.map((event) => {
+      if (event.projectId !== project.id) return event;
+      const renamed = renameSyntheticLabels(event, replacements);
+      renamed.projectName = project.name;
+      return renamed;
+    });
+    db.incidents = db.incidents?.map((incident) => incident.projectId === project.id ? { ...renameSyntheticLabels(incident, replacements), projectName: project.name, projectCode: project.projectCode } : incident);
+    const agentIds = new Set((db.agents ?? []).filter((agent) => agent.projectId === project.id && state.agents[agent.id]).map((agent) => agent.id));
+    db.logs = db.logs?.map((entry) => agentIds.has(entry.agentId) && entry.source === "synthetic-live.log" ? renameSyntheticLabels(entry, replacements) : entry);
+  }
+  state.version = SHOWCASE_VERSION;
+  return true;
+}
+
 /** Adds a user's gallery once. Deleted or edited projects are never silently recreated on reads. */
 export function ensureShowcase(db: MockDb, ownerId: number, now: number): boolean {
   const state = db.showcase ??= { version: SHOWCASE_VERSION, owners: {}, projects: {}, agents: {}, files: {}, analyses: {} };
-  if (state.owners[ownerId] || !db.users.some((u) => u.id === ownerId)) return false;
+  const migrated = migrateShowcaseCatalog(db);
+  if (state.owners[ownerId] || !db.users.some((u) => u.id === ownerId)) return migrated;
   const projectIds: number[] = [];
   SHOWCASE_PROJECTS.forEach((spec, profile) => {
     const existing = db.projects.find((p) => (p.createdBy ?? 1) === ownerId && p.projectCode === spec.code);
@@ -148,7 +209,7 @@ export function ensureShowcase(db: MockDb, ownerId: number, now: number): boolea
       }
       return;
     }
-    const project: Project = { id: id(db), projectCode: spec.code, name: spec.name, nickname: "합성 시연", description: `[합성 시연] ${spec.service}. 공개 시연을 위해 만든 가상 데이터이며 실제 단지 운영 상태와 무관합니다.`, status: "ACTIVE", technologies: [{ category: "LANGUAGE", name: "TypeScript" }, { category: "LANGUAGE", name: "Java" }, { category: "LANGUAGE", name: "C#" }, { category: "FRAMEWORK", name: "Spring Boot" }, { category: "DATABASE", name: profile % 2 ? "PostgreSQL" : "MariaDB" }], fileCount: 3, createdBy: ownerId, createdAt: iso(now - (45 + profile * 3) * DAY), updatedAt: iso(now - (profile + 1) * MINUTE), lastAnalyzedAt: iso(now - (profile + 1) * MINUTE), recentEventCount: 0 };
+    const project: Project = { id: id(db), projectCode: spec.code, name: spec.name, nickname: "합성 시연", description: `[합성 시연] ${spec.service}. 공개 시연을 위해 만든 가상 데이터이며 실제 시스템 운영 상태와 무관합니다.`, status: "ACTIVE", technologies: [{ category: "LANGUAGE", name: "TypeScript" }, { category: "LANGUAGE", name: "Java" }, { category: "LANGUAGE", name: "C#" }, { category: "FRAMEWORK", name: "Spring Boot" }, { category: "DATABASE", name: profile % 2 ? "PostgreSQL" : "MariaDB" }], fileCount: 3, createdBy: ownerId, createdAt: iso(now - (45 + profile * 3) * DAY), updatedAt: iso(now - (profile + 1) * MINUTE), lastAnalyzedAt: iso(now - (profile + 1) * MINUTE), recentEventCount: 0 };
     db.projects.push(project); projectIds.push(project.id);
     for (let day = 29; day >= 0; day--) {
       const at = now - day * DAY - (profile + 1) * MINUTE;

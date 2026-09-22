@@ -243,7 +243,7 @@ export default function MonitoringPage() {
         <EventsCard events={events} />
       </div>
 
-      {responseSeries.length > 0 && <MetricChart title="단지별 월패드 응답시간" metric="responseMs" series={responseSeries} order={responseSeries.map((s) => s.agentId)} minutes={range} bucketSeconds={bucketSeconds} now={end} />}
+      {responseSeries.length > 0 && <MetricChart title="시스템별 서비스 응답시간" metric="responseMs" series={responseSeries} order={responseSeries.map((s) => s.agentId)} minutes={range} bucketSeconds={bucketSeconds} now={end} />}
 
       <ServerList agents={agents} metrics={metrics} range={range} end={end} />
 
